@@ -121,6 +121,11 @@ class SpaceTracker:
             return self._flush()
         return None
 
+    def role_of(self, gesture_name: Optional[str]) -> str:
+        """Gesture role for queue/AI packaging ("normal" for unknown names)."""
+        info = self._info(gesture_name or "")
+        return info["role"] if info else "normal"
+
     def on_reset(self) -> None:
         """Hard reset (client 'reset' action): back to standard, no token."""
         self.active_space_id = None

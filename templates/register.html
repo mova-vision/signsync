@@ -4,408 +4,168 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Register Gesture</title>
+  <link rel="stylesheet" href="/static/css/admin.css?v=3">
   <style>
-    :root {
-      --mint: #00d4aa;
-      --mint-light: #dffaf3;
-      --ink: #17212b;
-      --muted: #63707c;
-      --line: #dfe5e8;
-      --bg: #f3f7f7;
-      --card-bg: #ffffff;
-      --danger: #c43c4b;
-      --danger-bg: #fff0f1;
-      --success-bg: #e3f8ed;
-      --success: #13763c;
+    /* page layout (theme comes from admin.css) — natural scroll, min-height fills */
+    .mv-app {
+      grid-template-rows: auto auto;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      overflow: hidden;
-      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: var(--ink);
-      background: var(--bg);
-    }
-
-    .app {
-      height: 100dvh;
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: clamp(12px, 2vw, 24px);
+    .mv-workspace {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-columns: minmax(300px, 1fr) minmax(420px, 1.6fr) minmax(260px, 0.9fr);
       gap: 16px;
+      align-items: stretch;
     }
 
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand {
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      font-size: 18px;
-    }
-
-    nav {
-      display: flex;
-      gap: 8px;
-    }
-
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: 650;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    nav a:hover,
-    nav a.active {
-      background: var(--mint);
-      color: var(--ink);
-    }
-
-    .workspace {
-      min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(260px, 0.8fr) minmax(400px, 1.4fr) minmax(220px, 0.7fr);
-      gap: 16px;
-    }
-
-    .panel {
-      min-height: 0;
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: clamp(14px, 2vw, 22px);
-      box-shadow: 0 8px 28px rgba(24, 47, 55, 0.05);
-    }
-
-    h1 {
-      margin: 0 0 4px;
-      font-size: clamp(20px, 2vw, 28px);
-    }
-
-    h2 {
-      margin: 0 0 14px;
-      font-size: 15px;
-    }
-
-    .muted {
-      color: var(--muted);
-      margin: 0;
-    }
-
-    .form {
-      margin-top: 22px;
+    .mv-form {
+      margin-top: 16px;
       display: grid;
       gap: 14px;
+      align-content: start;
     }
 
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #44515d;
-    }
-
-    input {
-      width: 100%;
-      border: 1px solid #cfd9de;
-      border-radius: 9px;
-      padding: 11px 12px;
-      font: inherit;
-      color: inherit;
-      background: #fff;
-    }
-
-    input:focus {
-      outline: 3px solid rgba(0, 212, 170, 0.2);
-      border-color: var(--mint);
-    }
-
-    .label-row {
+    .mv-label-row {
       display: flex;
       gap: 7px;
     }
 
-    .label-row input {
+    .mv-label-row input {
       min-width: 0;
     }
 
-    button {
-      border: 0;
-      border-radius: 9px;
-      padding: 10px 13px;
-      font: inherit;
-      font-weight: 750;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.15s;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.55;
-    }
-
-    .primary {
-      background: var(--mint);
-      color: var(--ink);
-    }
-
-    .secondary {
-      color: #394650;
-      background: #e7edef;
-    }
-
-    .wide {
-      width: 100%;
-    }
-
-    .tags {
+    .mv-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       min-height: 28px;
     }
 
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 7px 4px 9px;
-      background: var(--mint-light);
-      border-radius: 999px;
-      font-size: 12px;
-    }
-
-    .tag button {
-      padding: 0;
-      background: transparent;
-      font-size: 16px;
-      line-height: 1;
-      color: #38655c;
-    }
-
-    .capture {
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+    .mv-details {
+      display: flex;
+      flex-direction: column;
       gap: 12px;
     }
 
-    .capture-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .badge {
-      white-space: nowrap;
-      padding: 5px 9px;
-      border-radius: 99px;
-      background: #eef2f3;
-      color: #56636e;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .badge.ready {
-      background: var(--mint-light);
-      color: #087c67;
-    }
-
-    .stage {
-      position: relative;
-      min-height: 0;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #18242b;
-      display: grid;
-      place-items: center;
-    }
-
-    video,
-    .capture-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-    }
-
-    .capture-image {
-      display: none;
-    }
-
-    .stage.reviewing video {
-      display: none;
-    }
-
-    .stage.reviewing .capture-image {
-      display: block;
-    }
-
-    .empty-camera {
-      position: absolute;
-      text-align: center;
-      color: #d5e0e4;
-      max-width: 270px;
-      padding: 20px;
-    }
-
-    .stage.live .empty-camera,
-    .stage.reviewing .empty-camera {
-      display: none;
-    }
-
-    .countdown {
-      display: none;
-      position: absolute;
-      inset: 0;
-      place-items: center;
-      background: rgba(4, 15, 20, 0.38);
-      color: #fff;
-      font-size: 72px;
-      font-weight: 800;
-    }
-
-    .countdown.visible {
-      display: grid;
-    }
-
-    .capture-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .capture-actions button {
-      flex: 1;
-    }
-
-    .details {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .status {
-      border-radius: 10px;
-      padding: 12px;
-      background: #f2f5f6;
-      color: #51606b;
-      font-size: 13px;
-    }
-
-    .status.ready {
-      background: var(--success-bg);
-      color: var(--success);
-    }
-
-    .status.error {
-      background: var(--danger-bg);
-      color: var(--danger);
-    }
-
-    .metric {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    .metric small {
-      color: var(--muted);
-      display: block;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .metric strong {
-      display: block;
-      font-size: 22px;
-      margin-top: 2px;
-    }
-
-    .helper {
+    .mv-helper {
       margin-top: auto;
       padding-top: 12px;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    select {
-      width: 100%;
-      border: 1px solid #cfd9de;
-      border-radius: 9px;
-      padding: 10px 11px;
-      font: inherit;
-      color: inherit;
-      background: #fff;
-    }
-
-    select:focus {
-      outline: 3px solid rgba(0, 212, 170, 0.2);
-      border-color: var(--mint);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    .field-note {
+      border-top: 1px solid var(--mv-line-soft);
+      color: var(--mv-muted);
       font-size: 11.5px;
-      color: var(--muted);
-      margin: 4px 0 0;
+    }
+
+    .mv-capture-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mv-capture-actions button {
+      flex: 1;
     }
 
     .hidden {
       display: none !important;
     }
 
+    /* ============================================================
+       Capture source toggle — laptop camera vs backend stream
+       ============================================================ */
+    .mv-seg {
+      display: inline-flex;
+      padding: 3px;
+      gap: 3px;
+      border: 1px solid var(--mv-line);
+      border-radius: 999px;
+      background: var(--mv-row);
+      flex: none;
+    }
+
+    .mv-seg button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--mv-muted);
+      font: inherit;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mv-seg button svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .mv-seg button.active {
+      background: var(--mv-accent-soft);
+      border: 1px solid var(--mv-accent-line);
+      color: var(--mv-accent);
+    }
+
+    .mv-seg button:not(.active):hover {
+      color: var(--mv-text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* stream preview element used only in stream mode */
+    .mv-stream-img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .mv-stage[data-mode="stream"] video {
+      display: none;
+    }
+
+    .mv-stage[data-mode="stream"] .mv-stream-img {
+      display: block;
+    }
+
+    .mv-stage.is-reviewing .mv-stream-img {
+      display: none;
+    }
+
+    .mv-wait-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(14, 25, 34, 0.85);
+      border: 1px solid var(--mv-line);
+      color: #9db1c2;
+      font-size: 11px;
+      white-space: nowrap;
+      display: none;
+    }
+
+    .mv-stage.is-waiting .mv-wait-hint {
+      display: block;
+    }
+
     @media (max-width: 800px) {
-      body {
-        overflow: auto;
-      }
-      .app {
-        height: auto;
-        min-height: 100dvh;
-      }
-      .workspace {
+      .mv-workspace {
         grid-template-columns: 1fr;
       }
-      .stage {
-        min-height: 42vh;
+      .mv-stage {
+        min-height: 46vh;
       }
-      .details {
+      .mv-details {
         display: grid;
         grid-template-columns: 1fr 1fr;
       }
-      .helper {
+      .mv-helper {
         margin-top: 0;
         grid-column: 1 / -1;
       }
@@ -413,102 +173,150 @@
   </style>
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">MOVA</div>
-      <nav aria-label="Main navigation">
-        <a class="active" href="/admin/register">Register</a>
-        <a href="/admin/gestures">Manage Gestures</a>
-        <a href="/admin/groups">Groups</a>
-        <a href="/admin/live-test">Live Test</a>
-        <a href="/admin/pipeline">Real-Time Buffer</a>
-      </nav>
-    </header>
+  <header class="mv-topbar">
+    <a class="mv-brand" href="/admin">
+      <img src="/static/img/mova-logo.svg" alt="" width="15">
+      MOVA
+      <span class="mv-badge">gesture admin</span>
+    </a>
+    <nav class="mv-nav" aria-label="Main navigation">
+      <a class="active" href="/admin/register">Register</a>
+      <a href="/admin/gestures">Manage Gestures</a>
+      <a href="/admin/groups">Groups</a>
+      <a class="mv-play-link" href="/playground" title="Open the live Playground">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="m15.5 10.5 6-3v9l-6-3"/></svg>
+        Playground
+      </a>
+    </nav>
+  </header>
 
-    <section class="workspace">
+  <main class="mv-app">
+    <section class="mv-workspace">
       <!-- Left: Form Panel -->
-      <aside class="panel">
-        <h1>Register a gesture</h1>
-        <p class="muted">Name it, capture a clear hand pose, then save.</p>
-        <div class="form">
-          <div>
+      <aside class="mv-card mv-fluid">
+        <div class="mv-head">
+          <div class="mv-head-main">
+            <span class="mv-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.1L5 10l5.1 1.9L12 17l1.9-5.1L19 10l-5.1-1.9L12 3z"/></svg>
+            </span>
+            <div>
+              <h1 class="mv-head-title" style="font-size:15px">Register a gesture</h1>
+              <p class="mv-head-sub">Name it, capture a clear hand pose, then save.</p>
+            </div>
+          </div>
+        </div>
+        <div class="mv-form">
+          <div class="mv-field">
             <label for="gestureName">Gesture name</label>
             <input id="gestureName" autocomplete="off" placeholder="e.g. thumbs_up">
           </div>
-          <div>
+          <div class="mv-field">
             <label for="groupSelect">Group</label>
-            <p class="field-note" id="groupNote">Standard by default. Pick a group to keep this sign in its own matching pool.</p>
             <select id="groupSelect"><option value="">Standard</option></select>
+            <p class="mv-note" id="groupNote" style="margin-top:6px">Standard by default. Pick a group to keep this sign in its own matching pool.</p>
           </div>
-          <div id="shotBlock" style="display:none">
+          <div class="mv-field" id="shotBlock" style="display:none">
             <label for="shotSentence">Spoken sentence</label>
-            <p class="field-note">One-shot group: the moment this sign is detected, this sentence is spoken immediately, then the group turns itself off.</p>
-            <textarea id="shotSentence" rows="2" maxlength="300" placeholder="e.g. Hi, how are you?" style="width:100%;resize:vertical;font-family:inherit"></textarea>
+            <p class="mv-note" style="margin-bottom:6px">One-shot group: the moment this sign is detected, this sentence is spoken immediately, then the group turns itself off.</p>
+            <textarea id="shotSentence" rows="2" maxlength="300" placeholder="e.g. Hi, how are you?"></textarea>
             <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
               <select id="shotGender" style="width:auto">
                 <option value="male" selected>Male voice</option>
                 <option value="female">Female voice</option>
               </select>
-              <span class="field-note">speech is generated automatically on save</span>
+              <span class="mv-note">speech is generated automatically on save</span>
             </div>
           </div>
-          <div>
+          <div class="mv-field">
             <label for="labelInput">Meanings / labels</label>
-            <div class="label-row">
+            <div class="mv-label-row">
               <input id="labelInput" placeholder="yes, good, okay">
-              <button id="addLabel" class="secondary" type="button">Add</button>
+              <button id="addLabel" class="mv-secondary" type="button">Add</button>
             </div>
           </div>
-          <div class="tags" id="tags" aria-live="polite"></div>
-          <button id="openCamera" class="primary wide" type="button">Open camera</button>
-          <button id="saveGesture" class="primary wide" type="button" disabled>Save gesture</button>
+          <div class="mv-tags" id="tags" aria-live="polite"></div>
+          <button id="openCamera" class="mv-primary mv-wide" type="button">Open camera</button>
+          <button id="saveGesture" class="mv-primary mv-wide" type="button" disabled>Save gesture</button>
         </div>
       </aside>
 
       <!-- Middle: Camera Stage Panel -->
-      <section class="panel capture">
-        <div class="capture-head">
-          <div>
-            <h2>Camera</h2>
-            <p class="muted">Keep your whole hand in the frame.</p>
+      <section class="mv-card" style="padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="mv-head">
+          <div class="mv-head-main">
+            <span class="mv-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="m15.5 10.5 6-3v9l-6-3"/></svg>
+            </span>
+            <div>
+              <h2 class="mv-head-title">Camera</h2>
+              <p class="mv-head-sub">Keep your whole hand in the frame.</p>
+            </div>
           </div>
-          <span id="cameraBadge" class="badge">CAMERA OFF</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="srcToggle" class="mv-seg" role="group" aria-label="Capture source">
+              <button type="button" data-src="laptop" class="active" title="Capture from the laptop webcam">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="m15.5 10.5 6-3v9l-6-3"/></svg>
+                Laptop
+              </button>
+              <button type="button" data-src="stream" title="Capture from the backend camera stream (ESP32)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M5 12c0-4.4 3.1-8 7-8s7 3.6 7 8-3.1 8-7 8-7-3.6-7-8z" opacity="0"/><path d="m5 4-1.5 5M19 4l1.5 5" opacity="0"/><path d="M4.5 9.5h15V15a4 4 0 0 1-4 4h-7a4 4 0 0 1-4-4V9.5z"/><path d="M7.5 9.5V6.2A2.2 2.2 0 0 1 9.7 4h4.6a2.2 2.2 0 0 1 2.2 2.2v3.3"/></svg>
+                Stream
+              </button>
+            </div>
+            <span id="cameraBadge" class="mv-pill">camera off</span>
+            <span id="streamFps" class="mv-pill" style="display:none">— fps</span>
+          </div>
         </div>
-        <div id="stage" class="stage">
+        <div id="stage" class="mv-stage" data-mode="laptop" style="min-height:52vh">
           <video id="video" autoplay muted playsinline></video>
-          <img id="captureImage" class="capture-image" alt="Captured hand gesture">
-          <div class="empty-camera">Open the camera to see a live preview.</div>
-          <div id="countdown" class="countdown">3</div>
+          <img id="streamFrame" class="mv-stream-img" alt="Backend camera stream">
+          <img id="captureImage" class="mv-capture-img" alt="Captured hand gesture">
+          <div class="mv-stage-empty">Open the camera to see a live preview.</div>
+          <span class="mv-live-badge"><span class="mv-dot"></span>LIVE</span>
+          <div class="mv-wait-hint" id="waitHint">connecting to backend stream…</div>
+          <div id="countdown" class="mv-countdown">3</div>
         </div>
-        <div class="capture-actions">
-          <button id="captureFrame" class="primary" type="button" disabled>Capture pose</button>
-          <button id="retake" class="secondary hidden" type="button">Retake</button>
+        <div class="mv-capture-actions">
+          <button id="captureFrame" class="mv-primary" type="button" disabled>Capture pose</button>
+          <button id="retake" class="mv-secondary hidden" type="button">Retake</button>
         </div>
       </section>
 
       <!-- Right: Status / Details Panel -->
-      <aside class="panel details">
-        <div>
-          <h2>Capture status</h2>
-          <div id="status" class="status">Open the camera when you are ready.</div>
+      <aside class="mv-card mv-fluid mv-details">
+        <div class="mv-head">
+          <div class="mv-head-main">
+            <span class="mv-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <h2 class="mv-head-title">Capture status</h2>
+          </div>
         </div>
-        <div class="metric">
+        <div id="status" class="mv-status">Open the camera when you are ready.</div>
+        <div class="mv-metric">
           <small>Detected hands</small>
           <strong id="handCount">—</strong>
         </div>
-        <div class="metric">
+        <div class="mv-metric">
           <small>Saved frame</small>
           <strong id="frameState">No</strong>
         </div>
-        <p class="helper">You can register either one or two hands. The detector records the hand count from the frame you save.</p>
+        <p class="mv-helper">You can register either one or two hands. The detector records the hand count from the frame you save.</p>
       </aside>
     </section>
   </main>
 
   <script>
     const $ = id => document.getElementById(id);
+    // Future backend stream endpoint (ESP32 → laptop receiver).
+    // The frontend behaves as if this already exists: as soon as the backend
+    // serves a live MJPEG stream at this URL, the Stream toggle shows it.
+    const STREAM_URL = '/api/stream/video';
     const state = {
-      stream: null,
+      mode: 'laptop',        // 'laptop' | 'stream'
+      stream: null,          // laptop getUserMedia handle
+      streamTimer: null,
+      statusTimer: null,
       captureId: null,
       hasFeatures: false,
       labels: new Set(),
@@ -543,14 +351,14 @@
 
     const setStatus = (message, type = '') => {
       $('status').textContent = message;
-      $('status').className = `status ${type}`;
+      $('status').className = `mv-status ${type}`;
     };
 
     const renderLabels = () => {
       const tags = $('tags');
       tags.replaceChildren(...[...state.labels].map(label => {
         const tag = document.createElement('span');
-        tag.className = 'tag';
+        tag.className = 'mv-tag';
         tag.append(document.createTextNode(label));
 
         const remove = document.createElement('button');
@@ -577,8 +385,6 @@
       renderLabels();
     };
 
-    loadGroups();
-
     $('addLabel').onclick = addLabels;
     $('labelInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') {
@@ -595,6 +401,107 @@
       });
       if (!response.ok) throw new Error('Could not start a capture session');
       state.captureId = (await response.json()).capture_id;
+    }
+
+    // ===== capture source toggle ============================================
+    $('srcToggle').querySelectorAll('button').forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.src === state.mode) return;
+        setMode(btn.dataset.src);
+      };
+    });
+
+    function setMode(mode) {
+      state.mode = mode;
+      stopSource();
+      clearInterval(state.statusTimer);
+      $('streamFps').style.display = 'none';
+
+      // release the capture session bound to the old source
+      if (state.captureId) fetch(`/api/capture/cancel/${state.captureId}`).catch(() => {});
+      state.captureId = null;
+      state.hasFeatures = false;
+
+      const stage = $('stage');
+      stage.setAttribute('data-mode', mode);
+      stage.classList.remove('is-live', 'is-waiting', 'is-reviewing');
+
+      $('srcToggle').querySelectorAll('button').forEach(b =>
+        b.classList.toggle('active', b.dataset.src === mode));
+
+      $('cameraBadge').textContent = mode === 'laptop' ? 'camera off' : 'stream off';
+      $('cameraBadge').classList.remove('accent');
+      $('captureFrame').disabled = true;
+      $('captureFrame').textContent = 'Capture pose';
+      $('retake').classList.add('hidden');
+      $('frameState').textContent = 'No';
+
+      // laptop needs the permission button; the stream connects on its own
+      $('openCamera').style.display = mode === 'laptop' ? '' : 'none';
+      document.querySelector('.mv-stage-empty').textContent =
+        mode === 'laptop' ? 'Open the camera to see a live preview.' : 'Waiting for the backend stream…';
+      if (mode === 'stream') {
+        ensureStream();
+        setStatus('Watching the backend stream. Position your hand, then capture.', '');
+      } else {
+        setStatus('Open the camera when you are ready.');
+      }
+    }
+
+    // keeps retrying while the backend receiver endpoint isn't up yet
+    function ensureStream() {
+      clearInterval(state.streamTimer);
+      const img = $('streamFrame');
+      $('stage').classList.add('is-waiting');
+      $('waitHint').textContent = 'connecting to backend stream…';
+
+      img.onload = () => {
+        clearInterval(state.streamTimer);
+        state.streamTimer = null;
+        $('stage').classList.remove('is-waiting');
+        $('stage').classList.add('is-live');
+        $('cameraBadge').textContent = 'live';
+        $('cameraBadge').classList.add('accent');
+        $('waitHint').textContent = '';
+        $('captureFrame').disabled = false;
+        pollStreamStatus();
+        setStatus('Backend stream connected. Position your hand, then capture the pose.');
+      };
+      img.onerror = () => {
+        $('stage').classList.remove('is-live');
+        $('cameraBadge').textContent = 'stream off';
+        $('cameraBadge').classList.remove('accent');
+        $('captureFrame').disabled = true;
+        $('streamFps').style.display = 'none';
+        clearInterval(state.statusTimer);
+        $('waitHint').textContent = 'backend stream not available — retrying…';
+        clearInterval(state.streamTimer);
+        state.streamTimer = setInterval(() => {
+          img.src = `${STREAM_URL}?t=${Date.now()}`;
+        }, 5000);
+      };
+
+      img.src = `${STREAM_URL}?t=${Date.now()}`;
+    }
+
+    // watch the backend's own stats while streaming (also flags stale feeds)
+    async function pollStreamStatus() {
+      clearInterval(state.statusTimer);
+      const tick = async () => {
+        try {
+          const s = await (await fetch('/api/stream/status')).json();
+          if (s.available) {
+            $('streamFps').style.display = '';
+            $('streamFps').textContent = `${s.fps} fps`;
+            $('waitHint').textContent = '';
+          } else {
+            $('streamFps').style.display = 'none';
+            $('waitHint').textContent = 'stream stale — is the sender running?';
+          }
+        } catch { /* stats endpoint hiccup — ignore */ }
+      };
+      tick();
+      state.statusTimer = setInterval(tick, 2000);
     }
 
     $('openCamera').onclick = async () => {
@@ -618,15 +525,15 @@
         await $('video').play();
         await startSession();
 
-        $('stage').classList.add('live');
-        $('cameraBadge').textContent = 'LIVE';
-        $('cameraBadge').classList.add('ready');
+        $('stage').classList.add('is-live');
+        $('cameraBadge').textContent = 'live';
+        $('cameraBadge').classList.add('accent');
         $('captureFrame').disabled = false;
         $('openCamera').textContent = 'Camera ready';
         setStatus('Position your hand, then capture the pose.');
       } catch (error) {
         console.error(error);
-        stopCamera();
+        stopSource();
         $('openCamera').disabled = false;
         setStatus(`Could not open the camera: ${error.message}`, 'error');
       }
@@ -635,12 +542,24 @@
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     $('captureFrame').onclick = async () => {
-      if (state.busy || !$('video').videoWidth || !state.captureId) return;
+      if (state.busy) return;
+      // in stream mode nothing else gates the flow, so check the name here
+      if (state.mode === 'stream' && !$('gestureName').value.trim()) {
+        setStatus('Add a gesture name before capturing.', 'error');
+        $('gestureName').focus();
+        return;
+      }
+      const srcEl = state.mode === 'laptop' ? $('video') : $('streamFrame');
+      const srcWidth = state.mode === 'laptop' ? srcEl.videoWidth : srcEl.naturalWidth;
+      if (!srcWidth) return;
       state.busy = true;
       $('captureFrame').disabled = true;
       const countdown = $('countdown');
 
       try {
+        // stream mode starts its capture session lazily on first capture
+        if (!state.captureId) await startSession();
+
         for (const number of [3, 2, 1]) {
           countdown.textContent = number;
           countdown.classList.add('visible');
@@ -648,9 +567,9 @@
         }
 
         const canvas = document.createElement('canvas');
-        canvas.width = $('video').videoWidth;
-        canvas.height = $('video').videoHeight;
-        canvas.getContext('2d').drawImage($('video'), 0, 0);
+        canvas.width = srcWidth;
+        canvas.height = state.mode === 'laptop' ? srcEl.videoHeight : srcEl.naturalHeight;
+        canvas.getContext('2d').drawImage(srcEl, 0, 0);
 
         const response = await fetch('/api/capture/frame', {
           method: 'POST',
@@ -679,7 +598,7 @@
         }
 
         $('captureImage').src = `data:image/jpeg;base64,${data.image_base64}`;
-        $('stage').classList.add('reviewing');
+        $('stage').classList.add('is-reviewing');
         $('retake').classList.remove('hidden');
         $('captureFrame').textContent = 'Capture again';
         $('saveGesture').disabled = false;
@@ -696,15 +615,13 @@
     };
 
     $('retake').onclick = () => {
-      $('stage').classList.remove('reviewing');
+      $('stage').classList.remove('is-reviewing');
       $('retake').classList.add('hidden');
       state.hasFeatures = false;
       $('saveGesture').disabled = true;
       $('frameState').textContent = 'No';
       setStatus('Ready for another capture.');
-    };
-
-    $('saveGesture').onclick = async () => {
+    };    $('saveGesture').onclick = async () => {
       if (!state.hasFeatures || !state.captureId) return;
       const button = $('saveGesture');
       button.disabled = true;
@@ -736,12 +653,19 @@
       }
     };
 
-    function stopCamera() {
+    function stopSource() {
       state.stream?.getTracks().forEach(track => track.stop());
       state.stream = null;
+      $('video').srcObject = null;
+      clearInterval(state.streamTimer);
+      state.streamTimer = null;
+      $('streamFrame').removeAttribute('src');
     }
 
-    window.addEventListener('beforeunload', stopCamera);
+    window.addEventListener('beforeunload', () => {
+      stopSource();
+      if (state.captureId) fetch(`/api/capture/cancel/${state.captureId}`).catch(() => {});
+    });
   </script>
 </body>
 </html>

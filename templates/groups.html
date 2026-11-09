@@ -4,297 +4,114 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Groups</title>
+  <link rel="stylesheet" href="/static/css/admin.css?v=3">
   <style>
-    :root {
-      --mint: #00d4aa;
-      --mint-light: #dffaf3;
-      --ink: #17212b;
-      --muted: #63707c;
-      --line: #dfe5e8;
-      --bg: #f3f7f7;
-      --card-bg: #ffffff;
-      --danger: #c43c4b;
-      --danger-bg: #fff0f1;
-      --success-bg: #e3f8ed;
-      --success: #13763c;
+    /* page layout (theme comes from admin.css) — natural page scroll */
+    .mv-app {
+      grid-template-rows: auto auto;
     }
 
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: var(--ink);
-      background: var(--bg);
-    }
-
-    .app {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: clamp(12px, 2vw, 24px);
+    .mv-layout {
       display: grid;
-      gap: 16px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand { font-weight: 800; letter-spacing: 0.08em; font-size: 18px; }
-
-    nav { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: 650;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    nav a:hover, nav a.active { background: var(--mint); color: var(--ink); }
-
-    h1 { margin: 0 0 4px; font-size: clamp(20px, 2vw, 26px); }
-
-    p.muted { color: var(--muted); margin: 0; font-size: 13px; }
-
-    .panel {
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: clamp(14px, 2vw, 22px);
-      box-shadow: 0 8px 28px rgba(24, 47, 55, 0.05);
-    }
-
-    label { display: block; margin: 10px 0 6px; font-size: 12px; font-weight: 700; color: #44515d; }
-
-    input, select {
-      width: 100%;
-      border: 1px solid #cfd9de;
-      border-radius: 9px;
-      padding: 10px 11px;
-      font: inherit;
-      color: inherit;
-      background: #fff;
-    }
-
-    input:focus, select:focus {
-      outline: 3px solid rgba(0, 212, 170, 0.2);
-      border-color: var(--mint);
-    }
-
-    button {
-      border: 0;
-      border-radius: 9px;
-      padding: 10px 13px;
-      font: inherit;
-      font-weight: 750;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.15s;
-    }
-
-    button:hover:not(:disabled) { transform: translateY(-1px); }
-
-    .primary { background: var(--mint); color: var(--ink); }
-    .secondary { color: #394650; background: #e7edef; }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(240px, 0.7fr) minmax(400px, 2fr);
+      grid-template-columns: minmax(280px, 0.75fr) minmax(420px, 2fr);
       gap: 16px;
       align-items: start;
     }
 
-    .create-row button { width: 100%; margin-top: 12px; }
-
-    .mode-note { color: var(--muted); font-size: 12px; margin-top: 4px; }
-
-    .groups { display: grid; gap: 14px; }
-
-    .group-card {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .group-head {
+    .mv-create-row {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      background: #fbfdfd;
-      border-bottom: 1px solid var(--line);
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 12px;
+      position: sticky;
+      top: 16px;
     }
 
-    .group-head .gkey { font-weight: 800; letter-spacing: 0.04em; font-size: 15px; }
-
-    .pill {
-      font-size: 11px;
-      font-weight: 800;
-      padding: 3px 9px;
-      border-radius: 99px;
-      background: #eef2f3;
-      color: #56636e;
-    }
-
-    .pill.spell { background: var(--mint-light); color: #087c67; }
-
-    .group-head .actions { margin-left: auto; display: flex; gap: 6px; }
-
-    .group-head .actions button {
-      padding: 6px 10px;
-      font-size: 12px;
-      background: #e7edef;
-    }
-
-    .group-head .actions button.danger { background: var(--danger-bg); color: var(--danger); }
-
-    .group-body { padding: 12px 14px; display: grid; gap: 10px; }
-
-    .members { display: grid; gap: 6px; }
-
-    .member {
+    .mv-groups {
       display: grid;
-      grid-template-columns: 42px minmax(0, 1fr) auto auto;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 8px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fff;
+      gap: 12px;
     }
 
-    .member img {
-      width: 42px;
-      height: 30px;
-      object-fit: cover;
-      border-radius: 6px;
-      background: #eef2f3;
+    .mv-group {
+      transition: border-color 0.15s ease;
     }
 
-    .member .mname { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .member .mrole {
-      font-size: 10.5px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 99px;
-      background: #eef2f3;
-      color: #56636e;
-      text-transform: uppercase;
+    .mv-group:hover {
+      border-color: #2a4156;
     }
-
-    .member .mrole.ctl { background: #e8f0fb; color: #245aa8; }
-
-    .member .row-btns { display: flex; gap: 4px; }
-
-    .member .row-btns button {
-      padding: 5px 8px;
-      font-size: 11px;
-      background: #e7edef;
-    }
-
-    .member .row-btns button.danger { background: var(--danger-bg); color: var(--danger); }
-
-    .group-card.is-collapsed .group-body { display: none; }
-
-    .group-card .fold {
-      display: grid;
-      place-items: center;
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      border: 0;
-      border-radius: 8px;
-      background: #eef2f3;
-      color: #56636e;
-      flex: none;
-    }
-
-    .group-card .fold svg { transition: transform 0.18s ease; }
-    .group-card.is-collapsed .fold svg { transform: rotate(-90deg); }
-
-    .attach-row {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
-      gap: 8px;
-      align-items: end;
-    }
-
-    .attach-row select { margin: 0; }
-
-    .attach-row button { padding: 10px 14px; }
-
-    .empty { color: var(--muted); font-size: 12.5px; }
-
-    .sentence-box {
-      margin-bottom: 14px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fbfcfd;
-      display: grid;
-      gap: 8px;
-    }
-
-    .sentence-box textarea { resize: vertical; min-height: 52px; font-family: inherit; }
-
-    .sentence-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .sentence-row select { width: auto; }
 
     @media (max-width: 800px) {
-      .layout { grid-template-columns: 1fr; }
-      .attach-row { grid-template-columns: 1fr; }
+      .mv-layout {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">MOVA</div>
-      <nav aria-label="Main navigation">
-        <a href="/admin/register">Register</a>
-        <a href="/admin/gestures">Manage Gestures</a>
-        <a class="active" href="/admin/groups">Groups</a>
-        <a href="/admin/live-test">Live Test</a>
-        <a href="/admin/pipeline">Real-Time Buffer</a>
-      </nav>
-    </header>
+  <header class="mv-topbar">
+    <a class="mv-brand" href="/admin">
+      <img src="/static/img/mova-logo.svg" alt="" width="15">
+      MOVA
+      <span class="mv-badge">gesture admin</span>
+    </a>
+    <nav class="mv-nav" aria-label="Main navigation">
+      <a href="/admin/register">Register</a>
+      <a href="/admin/gestures">Manage Gestures</a>
+      <a class="active" href="/admin/groups">Groups</a>
+      <a class="mv-play-link" href="/playground" title="Open the live Playground">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="m15.5 10.5 6-3v9l-6-3"/></svg>
+        Playground
+      </a>
+    </nav>
+  </header>
 
-    <h1>Sign groups</h1>
-    <p class="muted">A group is its own matching pool. While its toggle sign is active, only this group's signs are
-      matched — the rest of the library is ignored. Spell groups join their signs into one word; normal groups
-      keep each sign as its own word.</p>
+  <main class="mv-app">
+    <section class="mv-heading">
+      <h1>Sign groups</h1>
+      <p>A group is its own matching pool. While its toggle sign is active, only this group's signs are
+        matched — the rest of the library is ignored. Spell groups join their signs into one word; normal groups
+        keep each sign as its own word.</p>
+    </section>
 
-    <section class="layout">
-      <aside class="panel create-row">
-        <label for="groupName">Group name</label>
-        <input id="groupName" autocomplete="off" placeholder="e.g._colors, spell">
-        <label for="groupJoin">What do signs in this group do?</label>
-        <select id="groupJoin">
-          <option value="words" selected>Normal — each sign stays its own word</option>
-          <option value="spell">Spell — signs chain into one word (A + B + C → ABC, BLUE + PLUE → BLUEPLUE)</option>
-          <option value="one_shot">One-shot — pre-recorded full sentence; one sign triggers it, then the group turns off</option>
-        </select>
-        <p class="mode-note">Any groups you create appear as a choice on the Register page.</p>
-        <button id="createGroup" class="primary" type="button">Create group</button>
-        <div id="createStatus" class="mode-note"></div>
+    <section class="mv-layout">
+      <aside class="mv-card mv-create-row">
+        <div class="mv-head">
+          <div class="mv-head-main">
+            <span class="mv-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            </span>
+            <h2 class="mv-head-title">New group</h2>
+          </div>
+        </div>
+        <div class="mv-field">
+          <label for="groupName">Group name</label>
+          <input id="groupName" autocomplete="off" placeholder="e.g._colors, spell">
+        </div>
+        <div class="mv-field">
+          <label for="groupJoin">What do signs in this group do?</label>
+          <select id="groupJoin">
+            <option value="words" selected>Normal — each sign stays its own word</option>
+            <option value="spell">Spell — signs chain into one word (A + B + C → ABC, BLUE + PLUE → BLUEPLUE)</option>
+            <option value="one_shot">One-shot — pre-recorded full sentence; one sign triggers it, then the group turns off</option>
+          </select>
+        </div>
+        <p class="mv-note">Any groups you create appear as a choice on the Register page.</p>
+        <button id="createGroup" class="mv-primary mv-wide" type="button">Create group</button>
+        <div id="createStatus" class="mv-note"></div>
       </aside>
 
-      <section class="panel">
-        <div class="groups" id="groups"></div>
+      <section class="mv-card mv-fluid">
+        <div class="mv-head">
+          <div class="mv-head-main">
+            <span class="mv-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M3 10h6"/></svg>
+            </span>
+            <div>
+              <h2 class="mv-head-title">Your groups</h2>
+              <p class="mv-head-sub">Expand a group to see and attach its signs.</p>
+            </div>
+          </div>
+        </div>
+        <div class="mv-groups" id="groups"></div>
       </section>
     </section>
   </main>
@@ -316,32 +133,32 @@
     const spaceOf = gid => state.spaces.find(s => (s.gesture_ids || []).includes(gid)) || null;
 
     function render() {
-      $('groups').replaceChildren(...state.spaces.map(sp => {
+      $('groups').replaceChildren(...state.spaces.map((sp, i) => {
         const card = document.createElement('article');
-        card.className = 'group-card is-collapsed';
+        card.className = 'mv-group' + (i === 0 ? '' : ' is-collapsed');
 
         const head = document.createElement('div');
-        head.className = 'group-head';
+        head.className = 'mv-group-head';
         // fold toggle — collapsed by default so many groups stay compact
         const fold = document.createElement('button');
         fold.type = 'button';
-        fold.className = 'fold';
+        fold.className = 'mv-fold';
         fold.title = 'Expand / collapse';
         fold.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
         fold.onclick = () => card.classList.toggle('is-collapsed');
         head.append(
           fold,
-          Object.assign(document.createElement('span'), { className: 'gkey', textContent: sp.key }),
-          Object.assign(document.createElement('span'), { className: 'pill' + (sp.join_mode === 'spell' ? ' spell' : ''), textContent: sp.join_mode }),
-          Object.assign(document.createElement('span'), { className: 'pill', textContent: sp.toggle_mode }),
-          Object.assign(document.createElement('span'), { className: 'pill', textContent: `${(sp.gesture_ids || []).length} signs` })
+          Object.assign(document.createElement('span'), { className: 'mv-gkey', textContent: sp.key }),
+          Object.assign(document.createElement('span'), { className: 'mv-pill' + (sp.join_mode === 'spell' ? ' accent' : ''), textContent: sp.join_mode }),
+          Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: sp.toggle_mode }),
+          Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: `${(sp.gesture_ids || []).length} signs` })
         );
-        if (sp.built_in) head.append(Object.assign(document.createElement('span'), { className: 'pill spell', textContent: 'built-in' }));
+        if (sp.built_in) head.append(Object.assign(document.createElement('span'), { className: 'mv-pill accent', textContent: 'built-in' }));
         const actions = document.createElement('span');
-        actions.className = 'actions';
+        actions.className = 'mv-actions';
         const del = document.createElement('button');
         del.type = 'button';
-        del.className = 'danger';
+        del.className = 'mv-danger';
         del.textContent = 'delete';
         del.onclick = async () => {
           if (!confirm(`Delete ${sp.key}? Its signs return to Standard.`)) return;
@@ -353,22 +170,24 @@
         card.append(head);
 
         const body = document.createElement('div');
-        body.className = 'group-body';
+        body.className = 'mv-group-body';
         const members = document.createElement('div');
         members.className = 'members';
+        members.style.display = 'grid';
+        members.style.gap = '6px';
 
         const ids = sp.gesture_ids || [];
         if (!ids.length) {
-          members.append(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'No signs yet. Use the Register page (Group select) or attach saved gestures below.' }));
+          members.append(Object.assign(document.createElement('div'), { className: 'mv-empty', textContent: 'No signs yet. Use the Register page (Group select) or attach saved gestures below.' }));
         }
         for (const gid of ids) {
           const g = state.gestures.find(x => x.id === gid) || { id: gid, name: gid };
           const row = document.createElement('div');
-          row.className = 'member';
+          row.className = 'mv-member';
           row.append(
             g.preview_path ? (() => { const i = document.createElement('img'); i.src = g.preview_path; return i; })()
                            : Object.assign(document.createElement('img'), {}),
-            Object.assign(document.createElement('span'), { className: 'mname', textContent: g.name }),
+            Object.assign(document.createElement('span'), { className: 'mv-mname', textContent: g.name }),
             roleChip(g),
             rowButtons(sp, g)
           );
@@ -385,7 +204,7 @@
     function roleChip(g) {
       const chip = document.createElement('span');
       const r = g.role === undefined ? 'normal' : g.role;
-      chip.className = 'mrole' + (r.startsWith('space-') ? ' ctl' : '');
+      chip.className = 'mv-pill' + (r.startsWith('space-') ? ' accent' : '');
       chip.textContent = r === 'space-sign' ? 'member' : r.replace('space-', '');
       if (r === 'normal') chip.textContent = 'standard';
       return chip;
@@ -394,16 +213,12 @@
     // one-shot: per-gesture spoken sentence editor (each sign = its own sentence)
     function sentenceRow(sp, g) {
       const box = document.createElement('div');
-      box.className = 'sentence-box';
-      const row = document.createElement('div');
-      row.className = 'sentence-row';
-
+      box.className = 'mv-sentence-box';
       const input = document.createElement('input');
       input.type = 'text';
       input.maxLength = 300;
       input.value = (g.shot && g.shot.sentence) || '';
       input.placeholder = `sentence spoken when "${g.name}" is signed`;
-      input.style.flex = '1';
 
       const sel = document.createElement('select');
       [['male', 'Male'], ['female', 'Female']].forEach(([v, t]) => {
@@ -414,18 +229,19 @@
       });
 
       const status = document.createElement('span');
-      status.className = 'mode-note';
+      status.className = 'mv-note';
       if (g.shot && g.shot.sentence) status.textContent = `"${g.shot.sentence}"`;
 
       const play = document.createElement('button');
       play.type = 'button';
+      play.className = 'mv-secondary';
       play.textContent = '▸ play';
       play.hidden = !(g.shot && g.shot.audio_key);
       play.onclick = () => new Audio(`/audio/${encodeURIComponent(g.shot.audio_key)}?t=${Date.now()}`).play();
 
       const save = document.createElement('button');
       save.type = 'button';
-      save.className = 'primary';
+      save.className = 'mv-primary';
       save.textContent = (g.shot && g.shot.sentence) ? 're-generate speech' : 'generate speech';
       save.onclick = async () => {
         const sentence = input.value.trim();
@@ -448,16 +264,16 @@
         save.disabled = false;
       };
 
-      row.append(input, sel, save, play, status);
-      box.append(row);
+      box.append(input, sel, save, play, status);
       return box;
     }
 
     function roleBtns(sp, g) {
       const wrap = [];
-      const mk = (label, role) => {
+      const mk = (label, role, cls) => {
         const b = document.createElement('button');
         b.type = 'button';
+        b.className = cls || 'mv-secondary';
         b.textContent = label;
         b.onclick = async () => {
           await fetch(`/api/gestures/${g.id}`, {
@@ -469,23 +285,22 @@
         };
         return b;
       };
-      wrap.push(mk('member', 'space-sign'), mk('toggle', 'space-toggle'), mk('entry', 'space-entry'), mk('exit', 'space-exit'), mk('remove', 'normal'));
+      wrap.push(mk('member', 'space-sign'), mk('toggle', 'space-toggle'), mk('entry', 'space-entry'), mk('exit', 'space-exit'), mk('remove', 'normal', 'mv-danger'));
       return wrap;
     }
 
     function rowButtons(sp, g) {
       const div = document.createElement('div');
-      div.className = 'row-btns';
+      div.className = 'mv-btns';
       div.append(...roleBtns(sp, g));
       const del = div.querySelector('button:last-child');
-      del.classList.add('danger');
       return div;
     }
 
     function attachRow(sp) {
       const nonMembers = state.gestures.filter(g => !spaceOf(g.id) && (g.role || 'normal') === 'normal');
       const wrap = document.createElement('div');
-      wrap.className = 'attach-row';
+      wrap.className = 'mv-attach';
       const sel = document.createElement('select');
       if (!nonMembers.length) {
         sel.innerHTML = '<option>All standard gestures are grouped already</option>';
@@ -502,7 +317,7 @@
       );
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'primary';
+      btn.className = 'mv-primary';
       btn.textContent = 'Attach';
       btn.disabled = !nonMembers.length;
       btn.onclick = async () => {
@@ -513,12 +328,16 @@
         });
         load();
       };
-      const label = document.createElement('label');
-      label.textContent = `Attach standard gesture to ${sp.key}`;
-      const label2 = document.createElement('label');
-      label2.textContent = 'Role';
-      const col1 = document.createElement('div'); col1.append(label, sel);
-      const col2 = document.createElement('div'); col2.append(label2, roleSel);
+      const col1 = document.createElement('div');
+      col1.append(
+        Object.assign(document.createElement('label'), { textContent: `Attach standard gesture to ${sp.key}`, style: 'display:block;font-size:11px;font-weight:700;color:#8ba1b3;margin-bottom:6px' }),
+        sel
+      );
+      const col2 = document.createElement('div');
+      col2.append(
+        Object.assign(document.createElement('label'), { textContent: 'Role', style: 'display:block;font-size:11px;font-weight:700;color:#8ba1b3;margin-bottom:6px' }),
+        roleSel
+      );
       wrap.append(col1, col2, btn);
       return wrap;
     }

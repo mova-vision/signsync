@@ -4,14 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Playground</title>
-  <link rel="stylesheet" href="/static/css/playground.css?v=speech2">
+  <link rel="stylesheet" href="/static/css/playground.css?v=ai1">
   <script src="/static/js/pg-common.js?v=speech2" defer></script>
   <script src="/static/js/pg-card1.js?v=speech2" defer></script>
   <script src="/static/js/pg-flog.js?v=speech2" defer></script>
   <script src="/static/js/pg-buffer.js?v=speech2" defer></script>
-  <script src="/static/js/pg-queue.js?v=speech2" defer></script>
-  <script src="/static/js/pg-speech.js?v=speech2" defer></script>
-  <script src="/static/js/pg-main.js?v=speech2" defer></script>
+  <script src="/static/js/pg-queue.js?v=ai1" defer></script>
+  <script src="/static/js/pg-ai.js?v=ai2" defer></script>
+  <script src="/static/js/pg-speech.js?v=ai1" defer></script>
+  <script src="/static/js/pg-main.js?v=ai1" defer></script>
 </head>
 <body>
   <main class="pg-app">
@@ -22,6 +23,10 @@
         <span class="pg-badge" title="Camera-based hand-gesture communication: live detection, sequence buffer, sign-space tokens and sentence queue">hand&nbsp;gesture&nbsp;communication</span>
       </span>
       <div class="pg-topbar-actions">
+        <a href="/admin" class="pg-hbtn" style="text-decoration:none" title="Gesture admin — register, manage gestures, groups">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h7v17H3z" opacity="0"/><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1V10z"/></svg>
+          <span>Admin</span>
+        </a>
         <button id="pgStopBtn" class="pg-hbtn" type="button">
           <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
           <span id="pgStopLabel">Stop</span>
@@ -166,9 +171,34 @@
           <ol id="pgQueueList" class="pg-queue-list" aria-label="Queued gesture sequences"></ol>
         </div>
 
-        <div class="pg-ai-void" title="Reserved for AI sentence processing">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M4.5 7l2 1.5m11 7.5 2 1.5M4.5 17l2-1.5m11-7.5 2-1.5"/><circle cx="12" cy="12" r="3.2"/></svg>
-          <span>AI Processing · reserved</span>
+        <div class="pg-ai-void" id="pgAiPanel" title="Live AI sentence processing (permutations → MiniLM → decision model)">
+          <div class="pg-ai-head">
+            <span class="pg-ai-title">AI Processing</span>
+            <span id="pgAiStatus" class="pg-ai-status is-idle">Idle</span>
+          </div>
+          <ul class="pg-ai-stages">
+            <li id="pgAiStageTags" class="pg-ai-stage">
+              <i class="pg-ai-dot"></i>
+              <span class="pg-ai-name">Tags collected</span>
+              <span id="pgAiTags" class="pg-ai-val">—</span>
+            </li>
+            <li id="pgAiStagePerm" class="pg-ai-stage">
+              <i class="pg-ai-dot"></i>
+              <span class="pg-ai-name">Permutations</span>
+              <span id="pgAiPerm" class="pg-ai-val">—</span>
+            </li>
+            <li id="pgAiStageMiniml" class="pg-ai-stage">
+              <i class="pg-ai-dot"></i>
+              <span class="pg-ai-name" id="pgAiMinimlName">MiniLM reduce</span>
+              <span id="pgAiMiniml" class="pg-ai-val">—</span>
+            </li>
+            <li id="pgAiStageDecision" class="pg-ai-stage">
+              <i class="pg-ai-dot"></i>
+              <span class="pg-ai-name" id="pgAiDecisionName">Decision · clef</span>
+              <span id="pgAiDecision" class="pg-ai-val">—</span>
+            </li>
+          </ul>
+          <div class="pg-ai-sentence" id="pgAiSentence">No sentence yet — complete a gesture sequence</div>
         </div>
       </article>
 
@@ -246,8 +276,8 @@
             <i>How many frames get processed per second</i>
           </div>
           <div class="pg-setting-control">
-            <input id="pgSetFps" type="range" min="1" max="30" step="1" value="6">
-            <b id="pgSetFpsVal">6 fps</b>
+            <input id="pgSetFps" type="range" min="1" max="30" step="1" value="9">
+            <b id="pgSetFpsVal">9 fps</b>
           </div>
         </div>
 
@@ -257,8 +287,8 @@
             <i>Silent frames before the sequence moves to the queue</i>
           </div>
           <div class="pg-setting-control">
-            <input id="pgSetTimeout" type="range" min="2" max="90" step="1" value="14">
-            <b id="pgSetTimeoutVal">14 fr ≈ 2.3s</b>
+            <input id="pgSetTimeout" type="range" min="2" max="90" step="1" value="6">
+            <b id="pgSetTimeoutVal">6 fr ≈ 0.7s</b>
           </div>
         </div>
 

@@ -139,7 +139,7 @@ $('pgResetBtn').onclick = () => {
 /* ------------------------------------------------------------
    4c. Processing settings (heart button → modal)
    ------------------------------------------------------------ */
-const pgSettings = { fps: TARGET_FPS, threshold: 65, timeoutFrames: 14 };
+const pgSettings = { fps: TARGET_FPS, threshold: 65, timeoutFrames: 6 };
 const settingsModal = $('pgSettingsModal');
 
 // The analysis window auto-scales with fps (odd, clamped 3-9 on the

@@ -8,6 +8,7 @@ Coordinates:
 - Continuous feeding to GestureBuffer (outlier removal, deduplication, buffering)
 """
 
+from collections import deque
 from typing import Dict, Any, Optional, List
 import numpy as np
 import time
@@ -49,6 +50,60 @@ class RealTimePipeline:
         self._prev_buffer_status = 'idle'
         self.space_tokens: List[Dict[str, Any]] = []
 
+        # AI layer (tags → permutations → [MiniLM] → clef decision → speech).
+        # Started on sequence completion, runs on a worker thread, finished
+        # events leave the network one WS payload at a time.
+        self.ai_state: Optional[Dict[str, Any]] = None
+        self._ai_events: deque = deque(maxlen=10)
+
+    def _start_ai_for_sequence(self, completed_names: List[str]) -> None:
+        """Fire the AI chain for the just-completed tag set (no raise path —
+        the AI layer is optional, never allowed to break detection)."""
+        try:
+            from src.ai.builder import get_ai_builder, ai_enabled
+            if not ai_enabled():
+                return
+            builder = get_ai_builder()
+            # Same packaging as the queue: control/member names are dropped
+            # (their words already arrived as space tokens, interleaved by pos).
+            tags = [
+                name for name in (completed_names or self.buffer.completed_sequence)
+                if self.spaces.role_of(name) == "normal"
+            ]
+            tokens = [dict(tok) for tok in self.space_tokens]
+            if not tags and not any(tok.get("letters") for tok in tokens):
+                return
+            self.ai_state = builder.start(tags, tokens, emitter=self._finish_ai_event)
+            print(
+                f"[ai] job #{self.ai_state.get('seq')} started | tags={tags} | "
+                f"tokens={len(tokens)} | miniml={self.ai_state.get('miniml_enabled')} | "
+                f"creds={'yes' if self.ai_state.get('decision_available') else 'NO (.env)'}",
+                flush=True,
+            )
+        except Exception as exc:
+            print(f"[ai] trigger failed: {exc}", flush=True)
+            self.ai_state = None
+
+    def _finish_ai_event(self, event: Dict[str, Any]) -> None:
+        """Runs on the AI worker thread: publish the finished result. The WS
+        loop drains one event per payload — deques append/popleft are safe here."""
+        if event.get("result") == "ok":
+            print(
+                f"[ai] job #{event.get('seq')} done → \"{event.get('sentence')}\" | "
+                f"options {event.get('option_count')}→{event.get('option_count_after')} | "
+                f"miniml {event.get('miniml_ms')}ms | decision {event.get('decision_ms')}ms | "
+                f"total {event.get('total_ms')}ms | audio={'ok' if event.get('audio_url') else 'FAILED: ' + str(event.get('speech_error'))}",
+                flush=True,
+            )
+        else:
+            print(
+                f"[ai] job #{event.get('seq')} error: {event.get('error')} "
+                f"(perm {event.get('perm_ms')}ms, miniml {event.get('miniml_ms')}ms)",
+                flush=True,
+            )
+        self._ai_events.appendleft(event)
+        self.ai_state = event
+
     def set_threshold(self, threshold: float) -> None:
         self.threshold = float(np.clip(threshold, 10.0, 95.0))
 
@@ -59,6 +114,13 @@ class RealTimePipeline:
         self.buffer.clear()
         self.spaces.on_reset()
         self.one_shot_speaker.on_reset()
+        self.ai_state = None
+        self._ai_events.clear()
+        try:
+            from src.ai.builder import get_ai_builder
+            get_ai_builder().reset()
+        except Exception:
+            pass
         self._begin_span()
 
     def _begin_span(self) -> None:
@@ -150,6 +212,11 @@ class RealTimePipeline:
             if space_token and not speech_event:
                 self.space_tokens.append(self._space_token_frame(space_token))
 
+            # Sequence just landed in the queue → AI layer makes sense of the
+            # tags (spell tokens go in as fixed words, not permuted).
+            if buffer_event.event_type == "completed":
+                self._start_ai_for_sequence(buffer_event.details.get("sequence") or [])
+
         # Build landmarks for overlay rendering
         simplified_landmarks = [
             [[point[0], point[1]] for point in hand]
@@ -166,7 +233,17 @@ class RealTimePipeline:
             self.buffer.clear()
             self._begin_span()
 
-        return {
+        # AI layer results leave one WS payload at a time. A finished event is
+        # surfaced twice: as `ai_event` (card-4 panel + latencies) and, when it
+        # produced speakable audio, as the `speech_event` card 5 already plays.
+        completed_ai = None
+        if self._ai_events:
+            try:
+                completed_ai = self._ai_events.popleft()
+            except IndexError:
+                completed_ai = None
+
+        result = {
             "hand_count": hand_count,
             "landmarks": simplified_landmarks,
             "scores": scores[:5],  # top 5 matches
@@ -183,3 +260,16 @@ class RealTimePipeline:
                 "details": buffer_event.details,
             } if buffer_event else None,
         }
+
+        if completed_ai is not None:
+            result["ai_event"] = completed_ai
+            if completed_ai.get("sentence") and completed_ai.get("audio_url"):
+                result["speech_event"] = {
+                    "source": "ai",
+                    "sentence": completed_ai.get("sentence"),
+                    "gesture": " + ".join(completed_ai.get("tags") or []),
+                    "audio_url": completed_ai.get("audio_url"),
+                    "speech_error": completed_ai.get("speech_error"),
+                }
+        result["ai_state"] = self.ai_state
+        return result

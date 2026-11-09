@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "command": "curl -sS -o /dev/null \\\n    -w \"%{http_code}\" \\\n    -X POST \\\n    \"https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run\" \\\n    -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \\\n    -H \"cf-aig-gateway-id: default\" \\\n    -H \"Content-Type: application/json\" \\\n    --data-binary @clef-payload.json",
+      "mean": 0.31823511583999997,
+      "stddev": 0.15107613169093662,
+      "median": 0.28156307914,
+      "user": 0.022181279999999998,
+      "system": 0.011333199999999998,
+      "min": 0.24346429214,
+      "max": 0.74549781414,
+      "times": [
+        0.24763539414000002,
+        0.28446940313999997,
+        0.74549781414,
+        0.27865675514,
+        0.26942237814,
+        0.25379981914,
+        0.29002236414,
+        0.28447315514,
+        0.24346429214,
+        0.28490978314
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

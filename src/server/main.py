@@ -1,7 +1,8 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import base64
@@ -11,6 +12,7 @@ import json
 import asyncio
 import time
 import uuid
+from collections import deque
 from pathlib import Path
 
 from src.storage.gesture_store import get_store
@@ -26,6 +28,14 @@ from src.pipeline.detection_pipeline import RealTimePipeline
 from src.buffer.gesture_buffer import GestureBuffer
 
 app = FastAPI(title="MOVA Gesture Registration")
+
+# The stream-capture page (node server, e.g. :3300) posts frames cross-origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -616,6 +626,89 @@ async def get_gesture_sentence_audio(gesture_id: str):
 @app.get("/health")
 async def health():
     return {"status": "ok", "gestures_count": len(store.get_all())}
+
+
+# ============================================================
+# Camera relay — the minimal node capture page (or any sender)
+# pushes frames here, and every admin page / test surface
+# consumes them as a standard MJPEG stream.
+# ============================================================
+_stream_frame: Dict[str, Any] = {"jpeg": None, "ts": 0.0}   # latest pushed frame
+_stream_push_times: deque = deque(maxlen=90)                # timestamps of pushes (fps)
+_stream_fps: float = 0.0
+
+
+@app.post("/api/stream/frame")
+async def receive_stream_frame(request: Request):
+    """Receiver endpoint for the capture page: JPEG frame as base64 JSON."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Body must be JSON")
+
+    b64 = body.get("image_base64", "")
+    if not b64:
+        raise HTTPException(400, "image_base64 is required")
+    if b64.startswith("data:"):
+        b64 = b64.split(",", 1)[1]
+
+    try:
+        jpg = base64.b64decode(b64)
+    except Exception:
+        raise HTTPException(400, "image_base64 is not valid base64")
+
+    # sanity: it should decode as an image
+    img_arr = np.frombuffer(jpg, np.uint8)
+    if cv2.imdecode(img_arr, cv2.IMREAD_COLOR) is None:
+        raise HTTPException(400, "Frame is not a decodable JPEG")
+
+    global _stream_fps
+    now = time.time()
+    _stream_push_times.append(now)
+    if _stream_push_times and now - _stream_push_times[0] > 0:
+        dt = now - _stream_push_times[0]
+        _stream_fps = round((len(_stream_push_times) - 1) / dt, 1)
+
+    _stream_frame["jpeg"] = jpg
+    _stream_frame["ts"] = now
+    return {"ok": True}
+
+
+@app.get("/api/stream/video")
+async def stream_video():
+    """MJPEG stream of the latest pushed frame — consumed by <img> tags."""
+    boundary = "frame"
+
+    async def gen():
+        last_ts = 0.0
+        while True:
+            jpg = _stream_frame["jpeg"]
+            if jpg is not None and _stream_frame["ts"] != last_ts:
+                last_ts = _stream_frame["ts"]
+                yield (
+                    b"--" + boundary.encode() + b"\r\n"
+                    b"Content-Type: image/jpeg\r\nContent-Length: "
+                    + str(len(jpg)).encode() + b"\r\n\r\n"
+                ) + jpg + b"\r\n"
+            # ~40 fps ceiling; only forwards when a new frame arrives
+            await asyncio.sleep(0.025)
+
+    return StreamingResponse(
+        gen(),
+        media_type=f"multipart/x-mixed-replace; boundary={boundary}",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/stream/status")
+async def stream_status():
+    """Is a sender pushing frames right now, and at what rate?"""
+    fresh = _stream_frame["jpeg"] is not None and (time.time() - _stream_frame["ts"]) < 3.0
+    return {
+        "available": fresh,
+        "fps": _stream_fps,
+        "age": round(time.time() - _stream_frame["ts"], 2) if _stream_frame["jpeg"] else None,
+    }
 
 
 if __name__ == "__main__":

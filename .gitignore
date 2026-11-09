@@ -30,3 +30,5 @@ data/piper/
 node_modules/
 PLANNING.md
 models/
+scripts/
+temp/

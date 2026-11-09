@@ -1,0 +1,37 @@
+{
+  "model": "@cf/cloudflare/clef-flash",
+  "state": {
+    "scene": "Two humans talking; the mute user communicates with hand gestures.",
+    "conversation_history": [],
+    "current_communication": {
+      "speaker": "U",
+      "gesture": "wave_hand + open_palm_request + point_somewhere",
+      "possible_meanings": [
+        "hello want here",
+        "hi I want there",
+        "bye need here",
+        "hello I want here",
+        "hi you want water",
+        "bye I need here",
+        "hello he want there",
+        "hi she want here"
+      ]
+    }
+  },
+  "questions": {
+    "sentence": {
+      "type": "choice",
+      "instructions": "Two humans are talking; one communicates only via hand gestures. Given the gesture sequence and context, choose the ONE candidate sentence most likely intended. Loose gesture-grammar is acceptable: pick exactly one candidate from the list.",
+      "criteria": {
+        "hello want here": "This is a candidate full sentence the user may intend",
+        "hi I want there": "This is a candidate full sentence the user may intend",
+        "bye need here": "This is a candidate full sentence the user may intend",
+        "hello I want here": "This is a candidate full sentence the user may intend",
+        "hi you want water": "This is a candidate full sentence the user may intend",
+        "bye I need here": "This is a candidate full sentence the user may intend",
+        "hello he want there": "This is a candidate full sentence the user may intend",
+        "hi she want here": "This is a candidate full sentence the user may intend"
+      }
+    }
+  }
+}

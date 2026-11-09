@@ -28,7 +28,7 @@ let running = false;
 let sending = false;
 let lastSendAt = 0;
 let fpsHistory = [];
-let TARGET_FPS = 6;
+let TARGET_FPS = 9;
 let FRAME_INTERVAL = Math.round(1000 / TARGET_FPS);
 
 let libraryById = null;   // id -> {name, landmarks, preview_path}

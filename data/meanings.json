@@ -1,0 +1,6 @@
+{
+  "_note": "Manual extras for gestures that have NO registered labels — they are never mixed into gestures that carry their own tags (data/gestures.json labels always win). Every word multiplies the permutations the AI chooses from. Names must match registered gesture names exactly. Missing gestures fall back to experiments/gesture_permutations_pick/dataset.json, then to the name itself.",
+  "_editing": "Read live at every AI run — edit and save, no restart needed. Re-register or use the gesture edit UI to add labels for tagged gestures.",
+  "going": ["going", "want to go", "leaving"],
+  "look": ["look", "see", "watch"]
+}

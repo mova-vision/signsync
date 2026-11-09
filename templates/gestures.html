@@ -4,343 +4,160 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Manage Gestures</title>
+  <link rel="stylesheet" href="/static/css/admin.css?v=4">
   <style>
-    :root {
-      --mint: #00d4aa;
-      --mint-light: #dffaf3;
-      --mint-dark: #087c67;
-      --ink: #17212b;
-      --muted: #63707c;
-      --line: #dfe5e8;
-      --bg: #f3f7f7;
-      --card-bg: #ffffff;
-      --danger: #c43c4b;
+    /* page layout — natural scroll, fewer + larger tiles */
+    .mv-app {
+      grid-template-rows: auto auto;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      height: 100dvh;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--ink);
-      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    .app {
-      height: 100%;
-      max-width: 1440px;
-      margin: auto;
-      padding: clamp(12px, 2vw, 24px);
-      display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr);
-      gap: 16px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-
-    nav {
-      display: flex;
-      gap: 8px;
-    }
-
-    nav a {
-      padding: 8px 12px;
-      border-radius: 8px;
-      color: var(--muted);
-      font-weight: 650;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    nav a:hover,
-    nav a.active {
-      background: var(--mint);
-      color: var(--ink);
-    }
-
-    .heading {
+    .mv-heading-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       gap: 16px;
     }
 
-    .heading h1 {
-      margin: 0;
-      font-size: clamp(22px, 2.5vw, 30px);
+    .mv-tile img.mv-preview {
+      height: clamp(150px, 24vh, 230px);
     }
 
-    .heading p {
-      margin: 4px 0 0;
-      color: var(--muted);
+    .mv-tile {
+      gap: 9px;
     }
 
-    .library {
-      min-height: 0;
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: clamp(14px, 2vw, 22px);
-      box-shadow: 0 8px 28px rgba(24, 47, 55, 0.05);
+    .mv-tile h3 {
+      font-size: 13.5px;
     }
 
-    .grid {
-      height: 100%;
-      min-height: 0;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding-right: 4px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      align-content: start;
-      gap: 14px;
-    }
-
-    .card {
+    .mv-sentence {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       min-width: 0;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      font-size: 12px;
+      color: var(--mv-accent-2);
+      cursor: pointer;
     }
 
-    .preview {
-      width: 100%;
-      height: clamp(90px, 15vh, 145px);
-      object-fit: cover;
-      border-radius: 8px;
-      background: #eef3f4;
-    }
-
-    .card-head {
-      display: flex;
-      gap: 8px;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 15px;
-      overflow-wrap: anywhere;
-    }
-
-    .badge {
-      padding: 4px 7px;
-      border-radius: 99px;
-      background: #e9eeef;
-      font-size: 10px;
-      font-weight: 800;
+    .mv-sentence span {
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .badge.two {
-      background: var(--mint-light);
-      color: var(--mint-dark);
-    }
-
-    .labels {
+    .mv-meta {
       display: flex;
       gap: 5px;
       flex-wrap: wrap;
-      min-height: 23px;
     }
 
-    .label {
-      padding: 3px 7px;
-      border-radius: 99px;
-      background: var(--mint-light);
-      font-size: 11px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 7px;
-      margin-top: auto;
-    }
-
-    button {
-      border: 0;
-      border-radius: 8px;
-      padding: 8px 10px;
+    .mv-filter {
+      border: 1px solid var(--mv-row-line);
+      border-radius: 9px;
+      padding: 9px 12px;
       font: inherit;
-      font-size: 12px;
-      font-weight: 750;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.15s;
+      font-size: 12.5px;
+      color: var(--mv-text);
+      background: var(--mv-row);
+      width: auto;
+      min-width: 200px;
     }
 
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
+    .mv-filter:focus {
+      outline: none;
+      border-color: var(--mv-accent-line);
     }
 
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .primary {
-      background: var(--mint);
-      color: var(--ink);
-    }
-
-    .secondary {
-      background: #e8edef;
-      color: #394650;
-    }
-
-    .danger {
-      background: var(--danger);
-      color: #ffffff;
-    }
-
-    .empty {
-      grid-column: 1 / -1;
-      place-self: center;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      place-items: center;
-      padding: 20px;
-      background: rgba(12, 25, 30, 0.45);
-      z-index: 100;
-    }
-
-    .modal.open {
-      display: grid;
-    }
-
-    .dialog {
-      width: min(420px, 100%);
-      background: #ffffff;
-      border-radius: 14px;
-      padding: 22px;
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
-    }
-
-    .dialog h2 {
-      margin: 0 0 16px;
-    }
-
-    .dialog label {
-      display: block;
-      margin: 12px 0 5px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .dialog input,
-    .dialog textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #cfd9de;
-      border-radius: 8px;
-      font: inherit;
-    }
-
-    .dialog textarea {
-      resize: vertical;
-    }
-
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 18px;
-    }
-
-    @media (max-width: 900px) {
-      body {
-        height: auto;
-        overflow: auto;
-      }
-      .app {
-        height: auto;
-        min-height: 100dvh;
-      }
-      .library {
-        min-height: 520px;
-      }
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 500px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-      .heading {
+    @media (max-width: 720px) {
+      .mv-heading-row {
         align-items: flex-start;
         flex-direction: column;
       }
-      .app {
-        grid-template-rows: auto auto auto;
-      }
-      .library {
-        min-height: 500px;
+      .mv-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       }
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">MOVA</div>
-      <nav aria-label="Main navigation">
-        <a href="/admin/register">Register</a>
-        <a class="active" href="/admin/gestures">Manage Gestures</a>
-        <a href="/admin/live-test">Live Test</a>
-        <a href="/admin/pipeline">Real-Time Buffer</a>
-      </nav>
-    </header>
+  <header class="mv-topbar">
+    <a class="mv-brand" href="/admin">
+      <img src="/static/img/mova-logo.svg" alt="" width="15">
+      MOVA
+      <span class="mv-badge">gesture admin</span>
+    </a>
+    <nav class="mv-nav" aria-label="Main navigation">
+      <a href="/admin/register">Register</a>
+      <a class="active" href="/admin/gestures">Manage Gestures</a>
+      <a href="/admin/groups">Groups</a>
+      <a class="mv-play-link" href="/playground" title="Open the live Playground">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="m15.5 10.5 6-3v9l-6-3"/></svg>
+        Playground
+      </a>
+    </nav>
+  </header>
 
-    <section class="heading">
-      <div>
-        <h1>Gesture library</h1>
-        <p>All gestures are available below — scroll only this library.</p>
+  <main class="mv-app">
+    <section class="mv-heading mv-heading-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="mv-head-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </span>
+        <div>
+          <h1 style="font-size:clamp(19px,2vw,24px)">Gesture library</h1>
+          <p style="margin-top:2px"><span id="libNote">All registered gestures — newest first.</span></p>
+        </div>
       </div>
-      <a href="/admin/register"><button class="primary" type="button">+ Register gesture</button></a>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="groupFilter" class="mv-filter" aria-label="Filter by group">
+          <option value="">All groups</option>
+        </select>
+        <a href="/admin/register"><button class="mv-primary" type="button">+ Register gesture</button></a>
+      </div>
     </section>
 
-    <section class="library">
-      <div id="grid" class="grid" aria-live="polite"></div>
+    <section class="mv-card" style="padding:16px">
+      <div id="grid" class="mv-grid" aria-live="polite"></div>
     </section>
   </main>
 
   <!-- Edit Gesture Modal -->
-  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <form id="editForm" class="dialog">
+  <div id="modal" class="mv-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form id="editForm" class="mv-dialog">
       <h2 id="modalTitle">Edit gesture</h2>
-      <label for="editName">Gesture name</label>
-      <input id="editName" required>
-      <label for="editLabels">Labels (comma-separated)</label>
-      <textarea id="editLabels" rows="3"></textarea>
-      <div class="dialog-actions">
-        <button id="cancel" class="secondary" type="button">Cancel</button>
-        <button class="primary" type="submit">Save changes</button>
+
+      <div class="mv-field">
+        <label for="editName">Gesture name</label>
+        <input id="editName" required>
+      </div>
+      <div class="mv-field" style="margin-top:12px">
+        <label for="editLabels">Meanings / labels (comma-separated)</label>
+        <textarea id="editLabels" rows="3"></textarea>
+      </div>
+
+      <!-- one-shot voice section (only for gestures inside one_shot groups) -->
+      <div id="editShotBlock" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--mv-accent-line);border-radius:10px;background:var(--mv-accent-soft)">
+        <b style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mv-accent)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 10v4a1 1 0 0 0 1 1h3l4.3 3.6a.8.8 0 0 0 1.2-.7V6.1a.8.8 0 0 0-1.2-.7L7 9H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          One-shot sentence
+        </b>
+        <p class="mv-note" style="margin:6px 0 8px">When this sign is detected, this sentence is spoken. Editing it regenerates the voice.</p>
+        <textarea id="editSentence" rows="2" maxlength="300" placeholder="e.g. Hi, how are you?"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <select id="editGender" style="width:auto;border:1px solid var(--mv-row-line);border-radius:8px;padding:8px 10px;font:inherit;color:var(--mv-text);background:var(--mv-row)">
+            <option value="male" selected>Male voice</option>
+            <option value="female">Female voice</option>
+          </select>
+          <button id="editShotSave" class="mv-primary" type="button">Generate voice</button>
+          <button id="editShotPlay" class="mv-secondary" type="button" hidden>▸ Play</button>
+          <span id="editShotStatus" class="mv-note"></span>
+        </div>
+      </div>
+
+      <div class="mv-dialog-actions">
+        <button id="cancel" class="mv-secondary" type="button">Close</button>
+        <button class="mv-primary" type="submit">Save changes</button>
       </div>
     </form>
   </div>
@@ -348,7 +165,9 @@
   <script>
     const $ = id => document.getElementById(id);
     let gestures = [];
-    let editingId = null;
+    let spaces = [];
+    let editingGesture = null;
+    let currentFilter = '';
 
     const element = (tag, className, text) => {
       const el = document.createElement(tag);
@@ -357,44 +176,112 @@
       return el;
     };
 
+    const spaceOf = gid => spaces.find(s => (s.gesture_ids || []).includes(gid)) || null;
+
+    async function load() {
+      try {
+        const [ge, sp] = await Promise.all([
+          fetch('/api/gestures'),
+          fetch('/api/spaces')
+        ]);
+        if (!ge.ok) throw new Error('Could not load gestures');
+        gestures = (await ge.json()).gestures || [];
+        spaces = sp.ok ? (await sp.json()).spaces || [] : [];
+        // newest first (register appends, so created_at keeps rank)
+        gestures.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        fillFilter();
+        render();
+      } catch (error) {
+        $('grid').replaceChildren(element('div', 'mv-empty', error.message));
+      }
+    }
+
+    function fillFilter() {
+      const sel = $('groupFilter');
+      const prev = currentFilter;
+      sel.replaceChildren(
+        Object.assign(document.createElement('option'), { value: '', textContent: 'All groups' }),
+        Object.assign(document.createElement('option'), { value: '__standard__', textContent: 'Standard' }),
+        ...spaces.map(s => Object.assign(document.createElement('option'), {
+          value: s.id,
+          textContent: `${s.key} (${s.join_mode})`
+        }))
+      );
+      sel.value = prev;
+      if (sel.value !== prev) currentFilter = '';
+    }
+
+    function visibleGestures() {
+      if (!currentFilter) return gestures;
+      if (currentFilter === '__standard__') return gestures.filter(g => !spaceOf(g.id));
+      return gestures.filter(g => (spaceOf(g.id) || {}).id === currentFilter);
+    }
+
     function render() {
       const grid = $('grid');
       grid.replaceChildren();
 
-      if (!gestures.length) {
-        grid.append(element('div', 'empty', 'No gestures registered yet.'));
+      const list = visibleGestures();
+      if (!list.length) {
+        grid.append(element('div', 'mv-empty', currentFilter ? 'No gestures in this group yet.' : 'No gestures registered yet.'));
         return;
       }
 
-      gestures.forEach(g => {
-        const card = element('article', 'card');
+      list.forEach(g => {
+        const sp = spaceOf(g.id);
+        const shot = (g.shot && g.shot.sentence) ? g.shot : null;
+
+        const card = element('article', 'mv-tile');
         if (g.preview_path) {
-          const img = element('img', 'preview');
+          const img = element('img', 'mv-preview');
           img.src = g.preview_path;
           img.alt = `${g.name} gesture preview`;
           card.append(img);
         }
 
-        const head = element('div', 'card-head');
-        const title = element('h2', '', g.name);
+        const head = element('div', 'mv-tile-head');
+        const title = element('h3', '', g.name);
         const badge = element(
           'span',
-          `badge ${g.hand_count === 2 ? 'two' : ''}`,
+          `mv-pill ${g.hand_count === 2 ? 'accent' : ''}`,
           `${g.hand_count} hand${g.hand_count === 1 ? '' : 's'}`
         );
         head.append(title, badge);
         card.append(head);
 
-        const labels = element('div', 'labels');
-        (g.labels || []).forEach(label => labels.append(element('span', 'label', label)));
+        // compact meta — group it belongs to (or standard)
+        const meta = element('div', 'mv-meta');
+        if (sp) {
+          meta.append(element('span', 'mv-pill accent', sp.key));
+          meta.append(element('span', 'mv-pill', sp.join_mode));
+          const role = (g.role || '').replace('space-', '');
+          if (role && role !== 'member') meta.append(element('span', 'mv-pill', role));
+        } else {
+          meta.append(element('span', 'mv-pill', 'standard'));
+        }
+        card.append(meta);
+
+        // meanings / labels
+        const labels = element('div', 'mv-labels');
+        (g.labels || []).forEach(label => labels.append(element('span', 'mv-tag', label)));
         if (!(g.labels || []).length) {
-          labels.append(element('span', 'label', 'No labels'));
+          labels.append(element('span', 'mv-tag', 'no labels'));
         }
         card.append(labels);
 
-        const actions = element('div', 'actions');
-        const edit = element('button', 'secondary', 'Edit');
-        const remove = element('button', 'danger', 'Delete');
+        // one-shot spoken sentence — single compressed line, click to play
+        if (shot) {
+          const line = element('div', 'mv-sentence');
+          line.title = `Play: ${shot.sentence}`;
+          line.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="flex:none"><path d="M3 10v4a1 1 0 0 0 1 1h3l4.3 3.6a.8.8 0 0 0 1.2-.7V6.1a.8.8 0 0 0-1.2-.7L7 9H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+          line.append(element('span', '', `"${shot.sentence}"`));
+          line.onclick = () => playSentenceAudio(g);
+          card.append(line);
+        }
+
+        const actions = element('div', 'mv-actions');
+        const edit = element('button', 'mv-secondary', 'Edit');
+        const remove = element('button', 'mv-danger', 'Delete');
         edit.type = remove.type = 'button';
         edit.onclick = () => openEdit(g);
         remove.onclick = () => removeGesture(g);
@@ -405,32 +292,75 @@
       });
     }
 
-    async function load() {
-      try {
-        const response = await fetch('/api/gestures');
-        if (!response.ok) throw new Error('Could not load gestures');
-        gestures = (await response.json()).gestures || [];
-        render();
-      } catch (error) {
-        $('grid').replaceChildren(element('div', 'empty', error.message));
-      }
+    function playSentenceAudio(g) {
+      const shot = (g.shot && g.shot.audio_key)
+        ? new Audio(`/audio/${encodeURIComponent(g.shot.audio_key)}?t=${Date.now()}`)
+        : new Audio(`/api/gestures/${g.id}/sentence/audio?t=${Date.now()}`);
+      shot.play();
     }
 
+    $('groupFilter').onchange = e => {
+      currentFilter = e.target.value;
+      render();
+    };
+
     function openEdit(g) {
-      editingId = g.id;
+      editingGesture = g;
       $('editName').value = g.name;
       $('editLabels').value = (g.labels || []).join(', ');
+
+      const sp = spaceOf(g.id);
+      const oneShot = sp && sp.join_mode === 'one_shot';
+      $('editShotBlock').style.display = oneShot ? '' : 'none';
+      if (oneShot) {
+        $('editSentence').value = (g.shot && g.shot.sentence) || '';
+        $('editGender').value = (g.shot && g.shot.gender) || 'male';
+        $('editShotStatus').textContent = (g.shot && g.shot.sentence) ? 'voice is ready' : 'no voice yet';
+        $('editShotPlay').hidden = !(g.shot && g.shot.audio_key);
+      }
+
       $('modal').classList.add('open');
       $('editName').focus();
     }
 
     function closeEdit() {
       $('modal').classList.remove('open');
-      editingId = null;
+      editingGesture = null;
     }
+
+    // regenerate the one-shot voice from the modal
+    $('editShotSave').onclick = async () => {
+      if (!editingGesture) return;
+      const sentence = $('editSentence').value.trim();
+      const status = $('editShotStatus');
+      if (!sentence) { status.textContent = 'type the sentence first'; return; }
+      $('editShotSave').disabled = true;
+      status.textContent = 'generating voice…';
+      try {
+        const res = await fetch(`/api/gestures/${editingGesture.id}/sentence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sentence, gender: $('editGender').value })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail || 'failed');
+        status.textContent = 'voice updated ✓';
+        $('editShotPlay').hidden = false;
+        editingGesture.shot = { sentence, gender: $('editGender').value, audio_key: d.audio_url?.split('/').pop() || (editingGesture.shot || {}).audio_key, ready: true };
+        render();
+      } catch (e) {
+        status.textContent = `error: ${e.message}`;
+      }
+      $('editShotSave').disabled = false;
+    };
+
+    $('editShotPlay').onclick = () => {
+      if (editingGesture) playSentenceAudio(editingGesture);
+    };
 
     $('editForm').onsubmit = async event => {
       event.preventDefault();
+      if (!editingGesture) return;
       const name = $('editName').value.trim();
       const labels = $('editLabels').value
         .split(',')
@@ -439,7 +369,7 @@
 
       if (!name) return;
 
-      const response = await fetch(`/api/gestures/${editingId}`, {
+      const response = await fetch(`/api/gestures/${editingGesture.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, labels })

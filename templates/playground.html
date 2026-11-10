@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Playground</title>
-  <link rel="stylesheet" href="/static/css/playground.css?v=ai1">
+  <link rel="stylesheet" href="/static/css/playground.css?v=ai2">
+  <link rel="stylesheet" href="/static/css/playground-theme.css?v=1">
   <script src="/static/js/pg-common.js?v=speech2" defer></script>
   <script src="/static/js/pg-card1.js?v=speech2" defer></script>
   <script src="/static/js/pg-flog.js?v=speech2" defer></script>
   <script src="/static/js/pg-buffer.js?v=speech2" defer></script>
   <script src="/static/js/pg-queue.js?v=ai1" defer></script>
-  <script src="/static/js/pg-ai.js?v=ai2" defer></script>
+  <script src="/static/js/pg-ai.js?v=ai3" defer></script>
   <script src="/static/js/pg-speech.js?v=ai1" defer></script>
   <script src="/static/js/pg-main.js?v=ai1" defer></script>
 </head>
@@ -171,7 +172,7 @@
           <ol id="pgQueueList" class="pg-queue-list" aria-label="Queued gesture sequences"></ol>
         </div>
 
-        <div class="pg-ai-void" id="pgAiPanel" title="Live AI sentence processing (permutations → MiniLM → decision model)">
+        <div class="pg-ai-void" id="pgAiPanel" title="Live AI sentence processing (ordered readings → one LLM call → speech)">
           <div class="pg-ai-head">
             <span class="pg-ai-title">AI Processing</span>
             <span id="pgAiStatus" class="pg-ai-status is-idle">Idle</span>
@@ -184,17 +185,12 @@
             </li>
             <li id="pgAiStagePerm" class="pg-ai-stage">
               <i class="pg-ai-dot"></i>
-              <span class="pg-ai-name">Permutations</span>
+              <span class="pg-ai-name">Readings</span>
               <span id="pgAiPerm" class="pg-ai-val">—</span>
-            </li>
-            <li id="pgAiStageMiniml" class="pg-ai-stage">
-              <i class="pg-ai-dot"></i>
-              <span class="pg-ai-name" id="pgAiMinimlName">MiniLM reduce</span>
-              <span id="pgAiMiniml" class="pg-ai-val">—</span>
             </li>
             <li id="pgAiStageDecision" class="pg-ai-stage">
               <i class="pg-ai-dot"></i>
-              <span class="pg-ai-name" id="pgAiDecisionName">Decision · clef</span>
+              <span class="pg-ai-name" id="pgAiDecisionName">LLM call</span>
               <span id="pgAiDecision" class="pg-ai-val">—</span>
             </li>
           </ul>

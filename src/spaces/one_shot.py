@@ -68,9 +68,13 @@ class OneShotSpeaker:
             "space": space.get("key"),
             "space_id": space["id"],
         }
-        # One sign, one sentence — done, but stay scoped until the hand is
-        # gone so the still-held pose can't leak into Standard mode.
-        self.pending_hand_off = True
+        # One sign, one sentence. With auto-close (the default for one-shot
+        # spaces) the space stays scoped only until the hand is gone so the
+        # still-held pose can't leak into Standard mode. With auto-close
+        # OFF the user keeps the space open — further member signs speak
+        # again immediately — and closes it via its toggle/exit sign.
+        if space.get("auto_close", True):
+            self.pending_hand_off = True
         return payload
 
     def flush_hand_off(self) -> bool:

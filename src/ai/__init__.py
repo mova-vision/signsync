@@ -1,14 +1,14 @@
 """MOVA AI sentence layer.
 
-Stages, each swappable without code changes:
+Stages:
 
-    tags collected → meanings → permutations → [MiniLM filter] → decision model
+    tags collected → ordered readings → one OpenAI-compatible LLM call
 
-- The MiniLM stage is optional (env-switchable, lazy-loaded, ONNX local).
-  Turned off = same data in/out, only the option count changes.
-- The decision stage is a Cloudflare clef-flash call (see cloudflare_clef.py).
-- A failed/absent stage degrades gracefully: the pipeline passes the full
-  candidate set through instead of erroring out.
+- Each gesture carries its possible meanings; spell-mode words are pinned
+  in place. The totality is shown as a "readings" count, never enumerated.
+- The LLM call composes the sentence directly (see llm_sentence.py);
+  credentials via AI_LLM_BASE_URL / AI_LLM_MODEL / AI_LLM_API_KEY in .env.
+- A single-reading sequence skips the network entirely (fast path).
 """
 from src.ai.builder import AiSentenceBuilder, get_ai_builder
 

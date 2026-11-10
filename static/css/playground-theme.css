@@ -1,0 +1,18 @@
+/* ============================================================
+   MOVA Playground — minimal override (matches /admin theme)
+   Loads after playground.css: sharp corners, flat backdrop,
+   no glow walls.
+   ============================================================ */
+:root {
+  --pg-radius: 0px;
+}
+
+/* sharp everything, even hardcoded radii */
+* {
+  border-radius: 0 !important;
+}
+
+/* flat page background — kill the radial gradient walls */
+body {
+  background: var(--pg-bg);
+}

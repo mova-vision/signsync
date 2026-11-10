@@ -4,25 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Register Gesture</title>
-  <link rel="stylesheet" href="/static/css/admin.css?v=3">
+  <link rel="stylesheet" href="/static/css/admin.css?v=6">
   <style>
-    /* page layout (theme comes from admin.css) — natural scroll, min-height fills */
+    /* page layout (theme comes from admin.css) — exactly one viewport, no page scroll */
+    body {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
     .mv-app {
-      grid-template-rows: auto auto;
+      flex: 1;
+      min-height: 0;
+      max-width: none;
+      padding-inline: clamp(10px, 1.2vw, 18px);
+      grid-template-rows: minmax(0, 1fr);
     }
 
     .mv-workspace {
       display: grid;
       grid-template-columns: minmax(300px, 1fr) minmax(420px, 1.6fr) minmax(260px, 0.9fr);
-      gap: 16px;
+      gap: 12px;
       align-items: stretch;
+      min-height: 0;
+    }
+
+    .mv-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     .mv-form {
       margin-top: 16px;
-      display: grid;
-      gap: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
       align-content: start;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .mv-form #openCamera {
+      margin-top: auto;
     }
 
     .mv-label-row {
@@ -74,10 +101,9 @@
        ============================================================ */
     .mv-seg {
       display: inline-flex;
-      padding: 3px;
-      gap: 3px;
+      padding: 2px;
+      gap: 2px;
       border: 1px solid var(--mv-line);
-      border-radius: 999px;
       background: var(--mv-row);
       flex: none;
     }
@@ -86,16 +112,15 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
-      border: 0;
-      border-radius: 999px;
+      padding: 5px 11px;
+      border: 1px solid transparent;
       background: transparent;
       color: var(--mv-muted);
       font: inherit;
       font-size: 11.5px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
     .mv-seg button svg {
@@ -105,13 +130,13 @@
 
     .mv-seg button.active {
       background: var(--mv-accent-soft);
-      border: 1px solid var(--mv-accent-line);
+      border-color: var(--mv-accent-line);
       color: var(--mv-accent);
     }
 
     .mv-seg button:not(.active):hover {
       color: var(--mv-text);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     /* stream preview element used only in stream mode */
@@ -140,11 +165,10 @@
       bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 5px 12px;
-      border-radius: 999px;
-      background: rgba(14, 25, 34, 0.85);
+      padding: 4px 10px;
+      background: rgba(17, 17, 17, 0.9);
       border: 1px solid var(--mv-line);
-      color: #9db1c2;
+      color: var(--mv-muted);
       font-size: 11px;
       white-space: nowrap;
       display: none;
@@ -155,6 +179,10 @@
     }
 
     @media (max-width: 800px) {
+      body {
+        height: auto;
+        overflow: auto;
+      }
       .mv-workspace {
         grid-template-columns: 1fr;
       }
@@ -171,6 +199,7 @@
       }
     }
   </style>
+  <script src="/static/js/mv-dropdown.js?v=1" defer></script>
 </head>
 <body>
   <header class="mv-topbar">
@@ -241,7 +270,7 @@
       </aside>
 
       <!-- Middle: Camera Stage Panel -->
-      <section class="mv-card" style="padding:14px;display:flex;flex-direction:column;gap:12px">
+      <section class="mv-card" style="padding:14px;gap:12px;min-height:0">
         <div class="mv-head">
           <div class="mv-head-main">
             <span class="mv-head-icon" aria-hidden="true">
@@ -267,7 +296,7 @@
             <span id="streamFps" class="mv-pill" style="display:none">— fps</span>
           </div>
         </div>
-        <div id="stage" class="mv-stage" data-mode="laptop" style="min-height:52vh">
+        <div id="stage" class="mv-stage" data-mode="laptop" style="flex:1;min-height:0">
           <video id="video" autoplay muted playsinline></video>
           <img id="streamFrame" class="mv-stream-img" alt="Backend camera stream">
           <img id="captureImage" class="mv-capture-img" alt="Captured hand gesture">

@@ -1,9 +1,7 @@
 /* ------------------------------------------------------------
    4c. Card 4 · AI Processing panel
    Every number here arrives measured from the pipeline stages —
-   nothing is hardcoded. When the MiniLM stage is switched off in
-   .env (AI_MINILM_ON=0) its row reports "off" and the decision
-   latency keeps flowing untouched.
+   nothing is hardcoded. Chain: ordered readings → one LLM call → TTS.
    ------------------------------------------------------------ */
 (function () {
   const panel = $('pgAiPanel');
@@ -12,16 +10,13 @@
   const status = $('pgAiStatus');
   const tagsVal = $('pgAiTags');
   const permVal = $('pgAiPerm');
-  const minimlVal = $('pgAiMiniml');
-  const minimlName = $('pgAiMinimlName');
-  const decisionVal = $('pgAiDecision');
-  const decisionName = $('pgAiDecisionName');
+  const llmVal = $('pgAiDecision');
+  const llmName = $('pgAiDecisionName');
   const sentence = $('pgAiSentence');
   const stageEls = {
     tags: $('pgAiStageTags'),
     perm: $('pgAiStagePerm'),
-    miniml: $('pgAiStageMiniml'),
-    decision: $('pgAiStageDecision'),
+    llm: $('pgAiStageDecision'),
   };
 
   function setLoading(on, label) {
@@ -59,9 +54,8 @@
     setLoading(true, 'Thinking…');
     renderTags(state, 'is-active');
     permVal.textContent = '…';
-    minimlVal.textContent = state.miniml_enabled === false ? 'off' : '…';
-    decisionVal.textContent = state.decision_available === false ? 'no .env creds' : '…';
-    sentence.textContent = 'AI pipeline running — permutations → MiniLM → clef…';
+    llmVal.textContent = state.llm_available === false ? 'no .env creds' : '…';
+    sentence.textContent = 'AI pipeline running — gestures → LLM…';
     sentence.classList.remove('is-error');
   }
 
@@ -71,42 +65,32 @@
 
     renderTags(ev, 'is-done');
 
-    permVal.textContent = `${ev.option_count != null ? ev.option_count : '—'} options · ${fmt(ev.perm_ms)}`;
+    permVal.textContent = `${ev.option_count != null ? ev.option_count : '—'} readings · ${fmt(ev.perm_ms)}`;
     stageEls.perm.classList.add('is-done');
+    permVal.title = 'Possible meaning combinations across the ordered gestures';
 
-    minimlVal.classList.remove('is-off');
-    if (ev.miniml_enabled === false) {
-      minimlVal.textContent = 'off';
-      minimlVal.classList.add('is-off');
-    } else if (!ev.miniml_ms) {
-      minimlVal.textContent = 'pass-through · 0.0 ms';
-    } else {
-      minimlVal.textContent = `${ev.option_count_after != null ? ev.option_count_after : '—'} kept · ${fmt(ev.miniml_ms)}`;
-    }
-    minimlVal.title = 'MiniLM (ms-marco-MiniLM-L-6-v2) reduces candidates to top-K when the set is big';
-    stageEls.miniml.classList.add('is-done');
-    if (ev.miniml_enabled === false) stageEls.miniml.classList.remove('is-done');
+    if (ev.model) llmName.textContent = `LLM · ${ev.model}`;
 
     if (ev.result === 'ok') {
-      decisionVal.textContent = ev.decision_note
-        ? `auto-picked · 0.0 ms`
-        : `${ev.decision_ms != null ? fmt(ev.decision_ms) : '—'}${ev.confidence != null ? ` · conf ${Number(ev.confidence).toFixed(2)}` : ''}`;
-      decisionVal.title = ev.decision_note || 'Cloudflare clef-flash decision call latency';
-      decisionVal.classList.remove('is-error');
-      decisionVal.classList.add('is-done');
-      stageEls.decision.classList.remove('is-error');
-      stageEls.decision.classList.add('is-done');
+      llmVal.textContent = ev.decision_note
+        ? 'auto-picked · 0.0 ms'
+        : `${ev.llm_ms != null ? fmt(ev.llm_ms) : '—'}`;
+      llmVal.title = ev.decision_note || 'OpenAI-compatible chat completion latency';
+      llmVal.classList.remove('is-error');
+      llmVal.classList.add('is-done');
+      stageEls.llm.classList.remove('is-error');
+      stageEls.llm.classList.add('is-done');
       sentence.textContent = ev.sentence || '(no sentence)';
       sentence.classList.remove('is-error');
       status.textContent = ev.total_ms != null ? `Done · ${fmt(ev.total_ms)} total` : 'Done';
     } else {
-      decisionVal.textContent = 'failed';
-      decisionVal.title = ev.error || '';
-      decisionVal.classList.add('is-error');
-      decisionVal.classList.remove('is-done');
-      stageEls.decision.classList.add('is-error');
-      stageEls.decision.classList.remove('is-done');
-      sentence.textContent = ev.error || 'Decision failed';
+      llmVal.textContent = 'failed';
+      llmVal.title = ev.error || '';
+      llmVal.classList.add('is-error');
+      llmVal.classList.remove('is-done');
+      stageEls.llm.classList.add('is-error');
+      stageEls.llm.classList.remove('is-done');
+      sentence.textContent = ev.error || 'LLM call failed';
       sentence.classList.add('is-error');
       status.textContent = 'Error';
       status.classList.add('is-error');

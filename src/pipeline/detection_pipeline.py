@@ -50,7 +50,7 @@ class RealTimePipeline:
         self._prev_buffer_status = 'idle'
         self.space_tokens: List[Dict[str, Any]] = []
 
-        # AI layer (tags → permutations → [MiniLM] → clef decision → speech).
+        # AI layer (tags → ordered readings → LLM → speech).
         # Started on sequence completion, runs on a worker thread, finished
         # events leave the network one WS payload at a time.
         self.ai_state: Optional[Dict[str, Any]] = None
@@ -76,8 +76,8 @@ class RealTimePipeline:
             self.ai_state = builder.start(tags, tokens, emitter=self._finish_ai_event)
             print(
                 f"[ai] job #{self.ai_state.get('seq')} started | tags={tags} | "
-                f"tokens={len(tokens)} | miniml={self.ai_state.get('miniml_enabled')} | "
-                f"creds={'yes' if self.ai_state.get('decision_available') else 'NO (.env)'}",
+                f"tokens={len(tokens)} | "
+                f"llm={'yes' if self.ai_state.get('llm_available') else 'NO (AI_LLM_* in .env)'}",
                 flush=True,
             )
         except Exception as exc:
@@ -90,15 +90,15 @@ class RealTimePipeline:
         if event.get("result") == "ok":
             print(
                 f"[ai] job #{event.get('seq')} done → \"{event.get('sentence')}\" | "
-                f"options {event.get('option_count')}→{event.get('option_count_after')} | "
-                f"miniml {event.get('miniml_ms')}ms | decision {event.get('decision_ms')}ms | "
-                f"total {event.get('total_ms')}ms | audio={'ok' if event.get('audio_url') else 'FAILED: ' + str(event.get('speech_error'))}",
+                f"readings {event.get('option_count')} | compose {event.get('perm_ms')}ms | "
+                f"llm {event.get('llm_ms')}ms | total {event.get('total_ms')}ms | "
+                f"audio={'ok' if event.get('audio_url') else 'FAILED: ' + str(event.get('speech_error'))}",
                 flush=True,
             )
         else:
             print(
                 f"[ai] job #{event.get('seq')} error: {event.get('error')} "
-                f"(perm {event.get('perm_ms')}ms, miniml {event.get('miniml_ms')}ms)",
+                f"(readings {event.get('perm_ms')}ms)",
                 flush=True,
             )
         self._ai_events.appendleft(event)

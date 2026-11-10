@@ -1,85 +1,90 @@
 /* ============================================================
-   MOVA Admin — shared theme (taken from the Playground dark
-   dashboard: near-black bg, dark cards, orange accent).
+   MOVA Admin — minimal terminal-style theme
+   (monospace, sharp corners, flat 1px borders, restrained color)
    Prefix: mv-
    ============================================================ */
 :root {
-  --mv-bg: #070d15;
-  --mv-card: #0e1922;
-  --mv-line: #1c2c3a;
-  --mv-line-soft: #15222e;
-  --mv-row: #101c26;
-  --mv-row-line: #182836;
-  --mv-text: #e8f2ec;
-  --mv-muted: #758592;
-  --mv-accent: #ff5938;
-  --mv-accent-2: #ff7a5c;
-  --mv-accent-soft: rgba(255, 89, 56, 0.12);
-  --mv-accent-line: rgba(255, 89, 56, 0.35);
-  --mv-danger: #ff4d5e;
-  --mv-danger-bg: rgba(255, 77, 94, 0.12);
-  --mv-radius: 16px;
+  --mv-bg: #111;
+  --mv-card: #171717;
+  --mv-line: #333;
+  --mv-line-soft: #262626;
+  --mv-row: #1e1e1e;
+  --mv-row-line: #333;
+  --mv-text: #ccc;
+  --mv-muted: #9a9a9a;
+  --mv-dim: #6a6a6a;
+  --mv-accent: #ff7b50;
+  --mv-accent-soft: rgba(255, 123, 80, 0.12);
+  --mv-accent-line: rgba(255, 123, 80, 0.45);
+  --mv-danger: #ff7b72;
+  --mv-danger-bg: rgba(255, 123, 114, 0.08);
+  --mv-ok: #7ee787;
+  --mv-radius: 0px;
 }
 
 * {
   box-sizing: border-box;
+  border-radius: 0 !important;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background:
-    radial-gradient(1100px 500px at 85% -10%, rgba(255, 89, 56, 0.06), transparent 60%),
-    radial-gradient(900px 420px at -10% 110%, rgba(56, 189, 248, 0.05), transparent 60%),
-    var(--mv-bg);
+  background: var(--mv-bg);
   color: var(--mv-text);
-  font: 13.5px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+h1, h2, h3 {
+  color: #eee;
+  font-weight: bold;
+}
+
+a {
+  color: var(--mv-accent);
 }
 
 /* ============================================================
-   Topbar  (Playground style: brand + badge / pill nav)
+   Topbar
    ============================================================ */
 .mv-topbar {
   width: 100%;
-  padding: 14px 22px 2px;
+  padding: 14px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  border-bottom: 1px solid var(--mv-line);
+  background: var(--mv-card);
 }
 
 .mv-brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.4px;
-  color: var(--mv-muted);
+  gap: 10px;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: #eee;
   text-decoration: none;
 }
 
 .mv-brand img {
   width: 15px;
   height: auto;
-  color: var(--mv-accent);
 }
 
 .mv-badge {
-  margin-left: 4px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: #17283a;
-  border: 1px solid #2a4156;
-  color: #8ba2b6;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.7px;
+  display: inline-flex;
+  padding: 2px 8px;
+  border: 1px solid var(--mv-line);
+  background: var(--mv-row);
+  color: var(--mv-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
-  user-select: none;
+  white-space: nowrap;
 }
 
 .mv-nav {
@@ -93,50 +98,42 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 13px;
+  padding: 6px 14px;
   border: 1px solid var(--mv-line);
-  border-radius: 999px;
-  background: var(--mv-card);
+  background: transparent;
   color: var(--mv-text);
   font: inherit;
   font-size: 12.5px;
-  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.mv-nav a svg {
-  width: 13px;
-  height: 13px;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
 
 .mv-nav a:hover {
-  border-color: var(--mv-accent-line);
-  background: #12212c;
+  border-color: var(--mv-accent);
+  color: var(--mv-accent);
 }
 
 .mv-nav a.active {
-  color: var(--mv-accent);
-  border-color: var(--mv-accent-line);
-  background: var(--mv-accent-soft);
+  background: var(--mv-accent);
+  border-color: var(--mv-accent);
+  color: #111;
 }
 
-/* the playground toggle — accent pill so it reads as the live surface */
 .mv-nav a.mv-play-link {
+  border-style: dashed;
   color: var(--mv-accent);
-  border-color: var(--mv-accent-line);
-  background: var(--mv-accent-soft);
 }
 
 .mv-nav a.mv-play-link:hover {
-  background: rgba(255, 89, 56, 0.2);
+  background: var(--mv-accent-soft);
 }
 
 /* ============================================================
    Page shell + cards
    ============================================================ */
 .mv-app {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   padding: clamp(12px, 2vw, 24px);
@@ -146,32 +143,25 @@ body {
 
 .mv-heading h1 {
   margin: 0;
-  font-size: clamp(20px, 2vw, 26px);
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-size: 18px;
 }
 
 .mv-heading p {
   margin: 4px 0 0;
   color: var(--mv-muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .mv-card {
   min-width: 0;
   background: var(--mv-card);
   border: 1px solid var(--mv-line);
-  border-radius: var(--mv-radius);
   padding: 16px;
-  box-shadow:
-    0 18px 40px -24px rgba(0, 0, 0, 0.55),
-    0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .mv-card h2 {
   margin: 0;
   font-size: 14px;
-  font-weight: 750;
 }
 
 .mv-sub {
@@ -185,7 +175,7 @@ body {
 }
 
 /* ============================================================
-   Card head (playground-style icon chip + title + sub)
+   Card head (icon square + title + sub)
    ============================================================ */
 .mv-head {
   display: flex;
@@ -203,11 +193,10 @@ body {
 
 .mv-head-icon {
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--mv-accent-soft);
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--mv-accent-line);
+  background: var(--mv-accent-soft);
   display: grid;
   place-items: center;
   color: var(--mv-accent);
@@ -220,9 +209,8 @@ body {
 
 .mv-head-title {
   margin: 0;
-  font-size: 14.5px;
-  font-weight: 750;
-  letter-spacing: 0.01em;
+  font-size: 13.5px;
+  font-weight: bold;
 }
 
 .mv-head-sub {
@@ -231,7 +219,7 @@ body {
   color: var(--mv-muted);
 }
 
-/* stretch a card across the full row/height */
+/* fill + scroll utilities */
 .mv-fluid {
   display: flex;
   flex-direction: column;
@@ -243,17 +231,16 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
   padding-right: 4px;
 }
 
-.mv-scroll::-webkit-scrollbar {
+.mv-scroll::-webkit-scrollbar,
+.mv-form::-webkit-scrollbar {
   width: 8px;
 }
 
 .mv-scroll::-webkit-scrollbar-thumb {
-  background: #22344a;
-  border-radius: 8px;
+  background: #3a3a3a;
 }
 
 /* ============================================================
@@ -261,37 +248,58 @@ body {
    ============================================================ */
 .mv-field label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: #8ba1b3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mv-muted);
 }
 
 .mv-field input,
 .mv-field textarea,
-.mv-field select {
+.mv-field select,
+.mv-filter {
   width: 100%;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border: 1px solid var(--mv-line);
+  padding: 8px 10px;
   font: inherit;
+  font-size: 13px;
   color: var(--mv-text);
   background: var(--mv-row);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .mv-field input::placeholder,
 .mv-field textarea::placeholder {
-  color: #4d5f6d;
+  color: #5a5a5a;
+}
+
+/* checkbox rows (auto-close etc.) */
+.mv-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.mv-check input {
+  width: auto;
+  accent-color: var(--mv-accent);
+}
+
+.mv-check span {
+  color: var(--mv-text);
+  font-size: 12.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
 }
 
 .mv-field input:focus,
 .mv-field textarea:focus,
-.mv-field select:focus {
+.mv-field select:focus,
+.mv-filter:focus {
   outline: none;
-  border-color: var(--mv-accent-line);
-  box-shadow: 0 0 0 3px rgba(255, 89, 56, 0.12);
+  border-color: var(--mv-accent);
 }
 
 .mv-field textarea {
@@ -308,48 +316,50 @@ body {
    Buttons
    ============================================================ */
 button {
-  border: 0;
+  border: 1px solid var(--mv-line);
   font: inherit;
-  font-weight: 700;
-  border-radius: 9px;
-  padding: 9px 13px;
+  font-size: 13px;
+  background: var(--mv-row);
+  color: var(--mv-text);
+  padding: 7px 13px;
   cursor: pointer;
-  transition: transform 0.15s, background 0.15s, border-color 0.15s, opacity 0.15s;
+  transition: border-color 0.12s, background 0.12s, color 0.12s, opacity 0.12s;
 }
 
 button:hover:not(:disabled) {
-  transform: translateY(-1px);
+  border-color: var(--mv-accent);
+  color: var(--mv-accent);
 }
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .mv-primary {
   background: var(--mv-accent);
-  color: #12100f;
+  border-color: var(--mv-accent);
+  color: #111;
 }
 
 .mv-primary:hover:not(:disabled) {
-  background: var(--mv-accent-2);
+  background: #ff8f6b;
+  color: #111;
 }
 
 .mv-secondary {
-  background: var(--mv-row);
-  border: 1px solid var(--mv-line);
-  color: var(--mv-text);
-}
-
-.mv-secondary:hover:not(:disabled) {
-  border-color: var(--mv-accent-line);
-  background: #12212c;
+  background: transparent;
 }
 
 .mv-danger {
-  background: var(--mv-danger-bg);
+  background: transparent;
+  border-color: rgba(255, 123, 114, 0.5);
   color: var(--mv-danger);
-  border: 1px solid rgba(255, 77, 94, 0.35);
+}
+
+.mv-danger:hover:not(:disabled) {
+  border-color: var(--mv-danger);
+  color: var(--mv-danger);
 }
 
 .mv-wide {
@@ -357,32 +367,30 @@ button:disabled {
 }
 
 /* ============================================================
-   Pills / badges / tags  (Playground palette)
+   Pills / badges / tags
    ============================================================ */
 .mv-pill {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: #17283a;
-  border: 1px solid #2a4156;
-  color: #8ba2b6;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  padding: 1px 8px;
+  border: 1px solid var(--mv-line);
+  background: var(--mv-row);
+  color: var(--mv-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .mv-pill.accent {
-  background: var(--mv-accent-soft);
   border-color: var(--mv-accent-line);
+  background: var(--mv-accent-soft);
   color: var(--mv-accent);
 }
 
 .mv-pill.danger {
+  border-color: rgba(255, 123, 114, 0.5);
   background: var(--mv-danger-bg);
-  border-color: rgba(255, 77, 94, 0.35);
   color: var(--mv-danger);
 }
 
@@ -390,21 +398,24 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 9px;
-  background: var(--mv-accent-soft);
-  border: 1px solid var(--mv-accent-line);
-  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid var(--mv-line);
+  background: var(--mv-row);
   font-size: 11.5px;
-  color: var(--mv-accent-2);
+  color: var(--mv-text);
 }
 
 .mv-tag button {
-  padding: 0 2px;
+  padding: 0 3px;
   background: transparent;
   border: 0;
-  color: var(--mv-accent);
+  color: var(--mv-muted);
   font-size: 14px;
   line-height: 1;
+}
+
+.mv-tag button:hover {
+  color: var(--mv-danger);
 }
 
 /* ============================================================
@@ -412,9 +423,8 @@ button:disabled {
    ============================================================ */
 .mv-stage {
   position: relative;
-  border-radius: 12px;
   overflow: hidden;
-  background: #060b11;
+  background: #000;
   border: 1px solid var(--mv-line);
 }
 
@@ -444,7 +454,7 @@ button:disabled {
   display: grid;
   place-items: center;
   text-align: center;
-  color: #46586a;
+  color: var(--mv-dim);
   padding: 20px;
   font-size: 12.5px;
 }
@@ -459,17 +469,16 @@ button:disabled {
   inset: 0;
   display: none;
   place-items: center;
-  background: rgba(4, 9, 14, 0.45);
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
   font-size: 64px;
-  font-weight: 800;
+  font-weight: bold;
 }
 
 .mv-countdown.visible {
   display: grid;
 }
 
-/* live badge on the stage corner */
 .mv-live-badge {
   position: absolute;
   top: 10px;
@@ -477,14 +486,12 @@ button:disabled {
   display: none;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(14, 25, 34, 0.8);
-  border: 1px solid var(--mv-accent-line);
+  padding: 2px 8px;
+  background: rgba(17, 17, 17, 0.85);
+  border: 1px solid var(--mv-accent);
   color: var(--mv-accent);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.7px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
 }
 
 .mv-stage.is-live .mv-live-badge {
@@ -494,44 +501,39 @@ button:disabled {
 .mv-live-badge .mv-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
   background: var(--mv-accent);
   animation: mvPulse 1.4s ease-in-out infinite;
 }
 
 @keyframes mvPulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.3; }
 }
 
 /* ============================================================
    Status / metric blocks
    ============================================================ */
 .mv-status {
-  border-radius: 10px;
-  padding: 12px;
+  padding: 10px 12px;
   background: var(--mv-row);
-  border: 1px solid var(--mv-row-line);
-  color: #93a5b1;
+  border: 1px solid var(--mv-line);
+  color: var(--mv-muted);
   font-size: 12.5px;
 }
 
 .mv-status.ready {
-  background: var(--mv-accent-soft);
-  border-color: var(--mv-accent-line);
-  color: var(--mv-accent-2);
+  border-color: var(--mv-accent);
+  color: var(--mv-accent);
 }
 
 .mv-status.error {
-  background: var(--mv-danger-bg);
-  border-color: rgba(255, 77, 94, 0.3);
+  border-color: rgba(255, 123, 114, 0.6);
   color: var(--mv-danger);
 }
 
 .mv-metric {
-  padding: 12px;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--mv-line);
   background: var(--mv-row);
 }
 
@@ -539,15 +541,15 @@ button:disabled {
   display: block;
   color: var(--mv-muted);
   font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .mv-metric strong {
   display: block;
-  font-size: 20px;
+  font-size: 18px;
   margin-top: 3px;
+  color: #eee;
 }
 
 /* ============================================================
@@ -555,8 +557,6 @@ button:disabled {
    ============================================================ */
 .mv-group {
   border: 1px solid var(--mv-line);
-  border-radius: 12px;
-  overflow: hidden;
   background: var(--mv-row);
 }
 
@@ -564,16 +564,16 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 13px;
-  background: rgba(16, 28, 38, 0.6);
+  padding: 10px 12px;
+  background: var(--mv-card);
   border-bottom: 1px solid var(--mv-line);
   flex-wrap: wrap;
 }
 
 .mv-group-head .mv-gkey {
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-weight: bold;
   font-size: 14px;
+  color: #eee;
 }
 
 .mv-group-head .mv-actions {
@@ -583,12 +583,12 @@ button:disabled {
 }
 
 .mv-group-head .mv-actions button {
-  padding: 5px 10px;
+  padding: 4px 10px;
   font-size: 11.5px;
 }
 
 .mv-group-body {
-  padding: 12px 13px;
+  padding: 12px;
   display: grid;
   gap: 10px;
 }
@@ -599,8 +599,7 @@ button:disabled {
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 10px;
+  border: 1px solid var(--mv-line);
   background: var(--mv-card);
 }
 
@@ -608,12 +607,11 @@ button:disabled {
   width: 42px;
   height: 30px;
   object-fit: cover;
-  border-radius: 6px;
-  background: #17283a;
+  background: #000;
 }
 
 .mv-member .mv-mname {
-  font-weight: 700;
+  font-weight: bold;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -625,7 +623,7 @@ button:disabled {
 }
 
 .mv-member .mv-btns button {
-  padding: 5px 8px;
+  padding: 4px 8px;
   font-size: 11px;
 }
 
@@ -637,27 +635,30 @@ button:disabled {
   width: 26px;
   height: 26px;
   padding: 0;
-  border-radius: 8px;
-  background: #17283a;
-  border: 1px solid #2a4156;
-  color: #8ba2b6;
+  background: var(--mv-card);
+  border: 1px solid var(--mv-line);
+  color: var(--mv-muted);
   display: grid;
   place-items: center;
 }
 
 .mv-group .mv-fold svg {
-  transition: transform 0.18s ease;
+  transition: transform 0.15s ease;
 }
 
 .mv-group.is-collapsed .mv-fold svg {
   transform: rotate(-90deg);
 }
 
+.mv-group:hover .mv-fold {
+  border-color: var(--mv-accent);
+  color: var(--mv-accent);
+}
+
 .mv-sentence-box {
   grid-column: 1 / -1;
-  padding: 10px 12px;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--mv-line);
   background: var(--mv-card);
   display: flex;
   gap: 8px;
@@ -665,24 +666,25 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.mv-sentence-box input {
-  flex: 1;
-  min-width: 180px;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 8px;
-  padding: 8px 10px;
+.mv-sentence-box input,
+.mv-sentence-box select {
+  border: 1px solid var(--mv-line);
+  padding: 6px 9px;
   font: inherit;
+  font-size: 12.5px;
   color: var(--mv-text);
   background: var(--mv-row);
 }
 
-.mv-sentence-box select {
-  border: 1px solid var(--mv-row-line);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font: inherit;
-  color: var(--mv-text);
-  background: var(--mv-row);
+.mv-sentence-box input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.mv-sentence-box input:focus,
+.mv-sentence-box select:focus {
+  outline: none;
+  border-color: var(--mv-accent);
 }
 
 .mv-attach {
@@ -693,7 +695,7 @@ button:disabled {
 }
 
 .mv-attach button {
-  padding: 10px 14px;
+  padding: 8px 13px;
 }
 
 /* ============================================================
@@ -702,27 +704,25 @@ button:disabled {
 .mv-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  gap: 14px;
   align-content: start;
 }
 
 .mv-tile {
   min-width: 0;
-  border: 1px solid var(--mv-row-line);
-  border-radius: 12px;
+  border: 1px solid var(--mv-line);
+  background: var(--mv-row);
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: var(--mv-row);
+  gap: 9px;
 }
 
 .mv-tile img.mv-preview {
   width: 100%;
-  height: clamp(90px, 15vh, 145px);
+  height: clamp(150px, 24vh, 230px);
   object-fit: cover;
-  border-radius: 8px;
-  background: #17283a;
+  background: #000;
 }
 
 .mv-tile-head {
@@ -734,7 +734,7 @@ button:disabled {
 
 .mv-tile h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13.5px;
   overflow-wrap: anywhere;
 }
 
@@ -745,15 +745,31 @@ button:disabled {
   min-height: 22px;
 }
 
-.mv-tile .mv-actions {
+.mv-btns,
+.mv-actions {
   display: flex;
-  gap: 7px;
+  gap: 6px;
+}
+
+.mv-tile .mv-actions {
   margin-top: auto;
 }
 
-.mv-tile .mv-actions button {
+.mv-tile .mv-actions button,
+.mv-member .mv-btns button {
   flex: 1;
-  padding: 8px 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+/* the role select (custom dropdown) shares the row with remove */
+.mv-member .mv-btns .mv-dd-wrap {
+  flex: 1;
+  min-width: 120px;
+}
+
+.mv-member .mv-btns .mv-dd-btn {
+  padding: 6px 10px;
   font-size: 12px;
 }
 
@@ -761,6 +777,156 @@ button:disabled {
   padding: 40px 10px;
   text-align: center;
   color: var(--mv-muted);
+}
+
+/* filter dropdown lives in header row */
+.mv-filter {
+  min-width: 220px;
+  width: auto;
+}
+
+/* ============================================================
+   Custom dropdowns (mv-dropdown.js) — playground camera-menu look
+   The native <select> is kept hidden inside the wrapper as the
+   source of truth (ids / values / change events unchanged).
+   ============================================================ */
+.mv-dd-wrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+/* keep .mv-attach grid columns from collapsing */
+.mv-attach .mv-dd-wrap {
+  width: 100%;
+}
+
+/* width hints that used to live on the native select move to the wrapper */
+.mv-dd-wrap:has(> .mv-filter) {
+  min-width: 220px;
+  width: auto;
+}
+
+.mv-dd-wrap select {
+  /* native control remains functional but invisible */
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
+}
+
+.mv-dd-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--mv-line);
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--mv-text);
+  background: var(--mv-row);
+  text-align: left;
+}
+
+.mv-dd-wrap.is-open .mv-dd-btn {
+  border-color: var(--mv-accent);
+  color: var(--mv-accent);
+}
+
+.mv-dd-btn:hover:not(:disabled) {
+  border-color: var(--mv-accent);
+}
+
+.mv-dd-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mv-dd-val {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.mv-dd-chev {
+  display: inline-flex;
+  flex: none;
+  color: var(--mv-muted);
+  transition: transform 0.12s;
+}
+
+.mv-dd-wrap.is-open .mv-dd-chev {
+  transform: rotate(180deg);
+}
+
+.mv-dd-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: auto;
+  min-width: 100%;
+  max-width: min(420px, 90vw);
+  max-height: 260px;
+  overflow-y: auto;
+  flex-direction: column;
+  gap: 0;
+  background: var(--mv-card);
+  border: 1px solid var(--mv-line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 60;
+  padding: 0;
+}
+
+.mv-dd-wrap.is-open .mv-dd-menu {
+  display: flex;
+}
+
+.mv-dd-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mv-dd-menu::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}
+
+.mv-dd-item {
+  display: block;
+  border: 0;
+  background: transparent;
+  color: var(--mv-text);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  padding: 8px 11px;
+  white-space: normal;
+  border-top: 1px solid var(--mv-line-soft);
+}
+
+.mv-dd-item:first-child {
+  border-top: 0;
+}
+
+.mv-dd-item:hover:not(.is-disabled) {
+  background: var(--mv-row);
+  color: var(--mv-accent);
+}
+
+.mv-dd-item.is-active {
+  color: var(--mv-accent);
+  border-left: 2px solid var(--mv-accent);
+  padding-left: 9px;
+}
+
+.mv-dd-item.is-disabled {
+  color: var(--mv-dim);
+  cursor: not-allowed;
 }
 
 /* ============================================================
@@ -772,8 +938,7 @@ button:disabled {
   display: none;
   place-items: center;
   padding: 20px;
-  background: rgba(3, 7, 12, 0.65);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.7);
   z-index: 100;
 }
 
@@ -782,24 +947,22 @@ button:disabled {
 }
 
 .mv-dialog {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   background: var(--mv-card);
   border: 1px solid var(--mv-line);
-  border-radius: 14px;
-  padding: 22px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  padding: 18px;
 }
 
 .mv-dialog h2 {
-  margin: 0 0 16px;
-  font-size: 16px;
+  margin: 0 0 14px;
+  font-size: 15px;
 }
 
 .mv-dialog-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
 /* ============================================================

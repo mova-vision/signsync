@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Manage Gestures</title>
-  <link rel="stylesheet" href="/static/css/admin.css?v=4">
+  <link rel="stylesheet" href="/static/css/admin.css?v=6">
+  <script src="/static/js/mv-dropdown.js?v=1" defer></script>
   <style>
     /* page layout — natural scroll, fewer + larger tiles */
     .mv-app {
@@ -53,11 +54,10 @@
     }
 
     .mv-filter {
-      border: 1px solid var(--mv-row-line);
-      border-radius: 9px;
-      padding: 9px 12px;
+      border: 1px solid var(--mv-line);
+      padding: 8px 10px;
       font: inherit;
-      font-size: 12.5px;
+      font-size: 13px;
       color: var(--mv-text);
       background: var(--mv-row);
       width: auto;
@@ -137,7 +137,7 @@
       </div>
 
       <!-- one-shot voice section (only for gestures inside one_shot groups) -->
-      <div id="editShotBlock" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--mv-accent-line);border-radius:10px;background:var(--mv-accent-soft)">
+      <div id="editShotBlock" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--mv-accent-line);background:var(--mv-accent-soft)">
         <b style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mv-accent)">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 10v4a1 1 0 0 0 1 1h3l4.3 3.6a.8.8 0 0 0 1.2-.7V6.1a.8.8 0 0 0-1.2-.7L7 9H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           One-shot sentence
@@ -145,7 +145,7 @@
         <p class="mv-note" style="margin:6px 0 8px">When this sign is detected, this sentence is spoken. Editing it regenerates the voice.</p>
         <textarea id="editSentence" rows="2" maxlength="300" placeholder="e.g. Hi, how are you?"></textarea>
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-          <select id="editGender" style="width:auto;border:1px solid var(--mv-row-line);border-radius:8px;padding:8px 10px;font:inherit;color:var(--mv-text);background:var(--mv-row)">
+          <select id="editGender" style="width:auto;border:1px solid var(--mv-line);padding:7px 10px;font:inherit;font-size:12.5px;color:var(--mv-text);background:var(--mv-row)">
             <option value="male" selected>Male voice</option>
             <option value="female">Female voice</option>
           </select>

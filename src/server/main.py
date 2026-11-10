@@ -113,12 +113,14 @@ class SpaceRequest(BaseModel):
     name: str
     toggle_mode: str = "shared"
     join_mode: str = "words"  # "spell", "words", "one_shot"
+    auto_close: Optional[bool] = None  # None = mode default (one_shot: on)
 
 
 class SpaceUpdateRequest(BaseModel):
     name: Optional[str] = None
     toggle_mode: Optional[str] = None
     join_mode: Optional[str] = None
+    auto_close: Optional[bool] = None
 
 
 class GestureSentenceRequest(BaseModel):
@@ -542,7 +544,7 @@ async def list_spaces():
 
 @app.post("/api/spaces")
 async def create_space(req: SpaceRequest):
-    space = space_store.create(req.name, req.toggle_mode, req.join_mode)
+    space = space_store.create(req.name, req.toggle_mode, req.join_mode, auto_close=req.auto_close)
     if not space:
         raise HTTPException(400, f"Space key already exists for '{req.name}'")
     return {"success": True, "space": space}
@@ -550,7 +552,8 @@ async def create_space(req: SpaceRequest):
 
 @app.patch("/api/spaces/{space_id}")
 async def update_space(space_id: str, req: SpaceUpdateRequest):
-    space = space_store.update(space_id, name=req.name, toggle_mode=req.toggle_mode, join_mode=req.join_mode)
+    space = space_store.update(space_id, name=req.name, toggle_mode=req.toggle_mode,
+                               join_mode=req.join_mode, auto_close=req.auto_close)
     if not space:
         raise HTTPException(404, "Space not found")
     return {"success": True, "space": space}

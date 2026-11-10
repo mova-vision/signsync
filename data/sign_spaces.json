@@ -2,27 +2,6 @@
   "schema_version": 1,
   "spaces": [
     {
-      "id": "spc_94207702",
-      "key": "SPELL",
-      "name": "SPELL",
-      "join_mode": "spell",
-      "toggle_mode": "shared",
-      "created_at": 1792998056.870339,
-      "gesture_ids": [
-        "8c76745e",
-        "1bfee927",
-        "e2bc9e30",
-        "6994f52a",
-        "3f547fc9",
-        "e53ba9e0",
-        "d8ba0db8",
-        "2d61d044",
-        "aeb315dd",
-        "e19206e3"
-      ],
-      "updated_at": 1794232466.278882
-    },
-    {
       "id": "spc_4904765c",
       "key": "COLOR",
       "name": "COLOR",
@@ -37,7 +16,8 @@
         "79c22ffd",
         "a9cc7d27"
       ],
-      "updated_at": 1793002961.1485655
+      "updated_at": 1794295129.8524234,
+      "auto_close": false
     },
     {
       "id": "spc_0d681012",
@@ -60,9 +40,11 @@
         "8077c81d",
         "5cab60d2",
         "776c6bbf",
-        "abcbd95f"
+        "abcbd95f",
+        "97162776"
       ],
-      "updated_at": 1793029473.4307227
+      "updated_at": 1794294881.6191,
+      "auto_close": true
     },
     {
       "id": "spc_3f9f0b4f",

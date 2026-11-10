@@ -74,19 +74,26 @@ class SpaceTracker:
         if role == "space-sign":
             space = self._space_of_gesture_id(info["id"])
             if space and self.active_space_id == space["id"]:
-                if space.get("join_mode", "words") == "spell":
+                join_mode = space.get("join_mode", "words")
+                if join_mode == "spell":
                     self.space_buffer.append(gesture_name)
                 else:
                     # Words mode: every accepted member is its own word
                     # token, emitted immediately — same packaging as a
                     # normal gesture, only namespaced.
-                    return {
+                    token = {
                         "type": "space",
                         "space": space.get("key"),
                         "space_id": space["id"],
                         "mode": "words",
                         "letters": [gesture_name],
                     }
+                    # auto-close groups: the sign was already marked — close
+                    # the space right here, no exit sign / hand-away needed.
+                    # Spell keeps chaining, so it never auto-closes.
+                    if space.get("auto_close", False) and join_mode == "words":
+                        self.deactivate()
+                    return token
             return None
 
         if role in CONTROL_ROLES:

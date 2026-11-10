@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVA — Groups</title>
-  <link rel="stylesheet" href="/static/css/admin.css?v=3">
+  <link rel="stylesheet" href="/static/css/admin.css?v=6">
+  <script src="/static/js/mv-dropdown.js?v=1" defer></script>
   <style>
     /* page layout (theme comes from admin.css) — natural page scroll */
     .mv-app {
@@ -36,7 +37,7 @@
     }
 
     .mv-group:hover {
-      border-color: #2a4156;
+      border-color: var(--mv-muted);
     }
 
     @media (max-width: 800px) {
@@ -94,6 +95,12 @@
             <option value="one_shot">One-shot — pre-recorded full sentence; one sign triggers it, then the group turns off</option>
           </select>
         </div>
+        <div class="mv-field">
+          <label class="mv-check">
+            <input type="checkbox" id="groupAutoClose" checked>
+            <span id="groupAutoCloseLabel">Close the group right after a sign — no hand-away wait</span>
+          </label>
+        </div>
         <p class="mv-note">Any groups you create appear as a choice on the Register page.</p>
         <button id="createGroup" class="mv-primary mv-wide" type="button">Create group</button>
         <div id="createStatus" class="mv-note"></div>
@@ -132,6 +139,11 @@
 
     const spaceOf = gid => state.spaces.find(s => (s.gesture_ids || []).includes(gid)) || null;
 
+    const autoCloseTitle = sp =>
+      sp.join_mode === 'one_shot'
+        ? 'on: space closes right after speaking (current MOVA behavior) · off: space stays open, each sign speaks again, close via toggle/exit sign'
+        : 'on: space closes right after each member sign — controls close/inactivity no longer needed';
+
     function render() {
       $('groups').replaceChildren(...state.spaces.map((sp, i) => {
         const card = document.createElement('article');
@@ -151,11 +163,31 @@
           Object.assign(document.createElement('span'), { className: 'mv-gkey', textContent: sp.key }),
           Object.assign(document.createElement('span'), { className: 'mv-pill' + (sp.join_mode === 'spell' ? ' accent' : ''), textContent: sp.join_mode }),
           Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: sp.toggle_mode }),
-          Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: `${(sp.gesture_ids || []).length} signs` })
+          Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: `${(sp.gesture_ids || []).length} signs` }),
+          Object.assign(document.createElement('span'), {
+            className: 'mv-pill' + (sp.auto_close ? ' accent' : ''),
+            textContent: sp.auto_close ? 'auto-close on' : 'auto-close off',
+            title: autoCloseTitle(sp)
+          })
         );
         if (sp.built_in) head.append(Object.assign(document.createElement('span'), { className: 'mv-pill accent', textContent: 'built-in' }));
         const actions = document.createElement('span');
         actions.className = 'mv-actions';
+        if (sp.join_mode !== 'spell') {
+          const ac = document.createElement('button');
+          ac.type = 'button';
+          ac.textContent = sp.auto_close ? 'auto-close on' : 'auto-close off';
+          ac.title = autoCloseTitle(sp);
+          ac.onclick = async () => {
+            await fetch(`/api/spaces/${sp.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ auto_close: !sp.auto_close })
+            });
+            load();
+          };
+          actions.append(ac);
+        }
         const del = document.createElement('button');
         del.type = 'button';
         del.className = 'mv-danger';
@@ -188,7 +220,6 @@
             g.preview_path ? (() => { const i = document.createElement('img'); i.src = g.preview_path; return i; })()
                            : Object.assign(document.createElement('img'), {}),
             Object.assign(document.createElement('span'), { className: 'mv-mname', textContent: g.name }),
-            roleChip(g),
             rowButtons(sp, g)
           );
           members.append(row);
@@ -201,12 +232,10 @@
       }));
     }
 
-    function roleChip(g) {
+    function roleChip(g) { // kept for the attach-row empty state; not used on member rows
       const chip = document.createElement('span');
-      const r = g.role === undefined ? 'normal' : g.role;
-      chip.className = 'mv-pill' + (r.startsWith('space-') ? ' accent' : '');
-      chip.textContent = r === 'space-sign' ? 'member' : r.replace('space-', '');
-      if (r === 'normal') chip.textContent = 'standard';
+      chip.className = 'mv-pill';
+      chip.textContent = (g.role || 'normal').replace('space-', '');
       return chip;
     }
 
@@ -230,7 +259,6 @@
 
       const status = document.createElement('span');
       status.className = 'mv-note';
-      if (g.shot && g.shot.sentence) status.textContent = `"${g.shot.sentence}"`;
 
       const play = document.createElement('button');
       play.type = 'button';
@@ -256,7 +284,7 @@
           });
           const d = await res.json();
           if (!res.ok) throw new Error(d.detail || 'failed');
-          status.textContent = `"${sentence}" ✓`;
+          status.textContent = 'saved ✓';
           play.hidden = false;
           new Audio(d.audio_url + '?t=' + Date.now()).play();
           load();
@@ -268,32 +296,44 @@
       return box;
     }
 
-    function roleBtns(sp, g) {
-      const wrap = [];
-      const mk = (label, role, cls) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = cls || 'mv-secondary';
-        b.textContent = label;
-        b.onclick = async () => {
-          await fetch(`/api/gestures/${g.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role, space_id: role === 'normal' ? null : sp.id })
-          });
-          load();
-        };
-        return b;
-      };
-      wrap.push(mk('member', 'space-sign'), mk('toggle', 'space-toggle'), mk('entry', 'space-entry'), mk('exit', 'space-exit'), mk('remove', 'normal', 'mv-danger'));
-      return wrap;
-    }
-
+    // member row: the role lives in ONE select (shows current role), remove
+    // stays a button. No five-button fuzz, no accent pill duplicates.
     function rowButtons(sp, g) {
       const div = document.createElement('div');
       div.className = 'mv-btns';
-      div.append(...roleBtns(sp, g));
-      const del = div.querySelector('button:last-child');
+
+      const sel = document.createElement('select');
+      const current = (g.role || 'space-sign');
+      [['space-sign', 'member'], ['space-toggle', 'toggle sign'], ['space-entry', 'entry sign'], ['space-exit', 'exit sign']]
+        .forEach(([v, t]) => {
+          const o = Object.assign(document.createElement('option'), { value: v, textContent: t });
+          if (current === v) o.selected = true;
+          sel.append(o);
+        });
+      sel.onchange = async () => {
+        if (!sel.value) return;
+        await fetch(`/api/gestures/${g.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: sel.value, space_id: sp.id })
+        });
+        load();
+      };
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'mv-danger';
+      del.textContent = 'remove';
+      del.onclick = async () => {
+        await fetch(`/api/gestures/${g.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: 'normal' })
+        });
+        load();
+      };
+
+      div.append(sel, del);
       return div;
     }
 
@@ -330,12 +370,12 @@
       };
       const col1 = document.createElement('div');
       col1.append(
-        Object.assign(document.createElement('label'), { textContent: `Attach standard gesture to ${sp.key}`, style: 'display:block;font-size:11px;font-weight:700;color:#8ba1b3;margin-bottom:6px' }),
+        Object.assign(document.createElement('label'), { textContent: `Attach standard gesture to ${sp.key}`, style: 'display:block;font-size:11px;font-weight:700;color:var(--mv-muted);margin-bottom:6px' }),
         sel
       );
       const col2 = document.createElement('div');
       col2.append(
-        Object.assign(document.createElement('label'), { textContent: 'Role', style: 'display:block;font-size:11px;font-weight:700;color:#8ba1b3;margin-bottom:6px' }),
+        Object.assign(document.createElement('label'), { textContent: 'Role', style: 'display:block;font-size:11px;font-weight:700;color:var(--mv-muted);margin-bottom:6px' }),
         roleSel
       );
       wrap.append(col1, col2, btn);
@@ -348,7 +388,11 @@
       const res = await fetch('/api/spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, join_mode: $('groupJoin').value })
+        body: JSON.stringify({
+          name,
+          join_mode: $('groupJoin').value,
+          auto_close: $('groupAutoClose').checked
+        })
       });
       const data = await res.json();
       if (!res.ok) { $('createStatus').textContent = data.detail || 'Could not create group'; return; }
@@ -356,6 +400,13 @@
       $('createStatus').textContent = `Created ${data.space.key}. Register its signs on /admin/register or attach saved ones here.`;
       load();
     };
+
+    // the auto-close checkbox pre-checks itself to match the picked mode:
+    // one-shot groups historically close right after speaking, open sign
+    // spaces historically wait for the exit/toggle sign.
+    $('groupJoin').addEventListener('change', () => {
+      $('groupAutoClose').checked = $('groupJoin').value === 'one_shot';
+    });
 
     load();
   </script>

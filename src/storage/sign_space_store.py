@@ -75,17 +75,24 @@ class SignSpaceStore:
                     return s
         return None
 
-    def create(self, name: str, toggle_mode: str = "shared", join_mode: str = "words") -> Optional[Dict[str, Any]]:
+    def create(self, name: str, toggle_mode: str = "shared", join_mode: str = "words",
+               auto_close: Optional[bool] = None) -> Optional[Dict[str, Any]]:
         with self._lock:
             key = make_key(name)
             if self.get_by_key(key):
                 return None
+            if auto_close is None:
+                # preserve the historical behavior per mode: one-shot spaces
+                # always closed right after speaking; open sign spaces stay
+                # open until their exit/toggle sign or inactivity.
+                auto_close = join_mode == "one_shot"
             space = {
                 "id": f"spc_{str(uuid.uuid4())[:8]}",
                 "key": key,
                 "name": name,
                 "join_mode": join_mode if join_mode in ("spell", "words", "one_shot") else "words",
                 "toggle_mode": toggle_mode if toggle_mode in ("shared", "separate") else "shared",
+                "auto_close": bool(auto_close),
                 "created_at": time.time(),
                 "gesture_ids": [],
             }
@@ -99,6 +106,7 @@ class SignSpaceStore:
         name: Optional[str] = None,
         toggle_mode: Optional[str] = None,
         join_mode: Optional[str] = None,
+        auto_close: Optional[bool] = None,
     ) -> Optional[Dict[str, Any]]:
         with self._lock:
             space = self._get_unlocked(space_id)
@@ -115,6 +123,8 @@ class SignSpaceStore:
                 space["toggle_mode"] = toggle_mode
             if join_mode in ("spell", "words", "one_shot"):
                 space["join_mode"] = join_mode
+            if auto_close is not None:
+                space["auto_close"] = bool(auto_close)
             space["updated_at"] = time.time()
             self.save()
             return space
@@ -169,6 +179,7 @@ class SignSpaceStore:
                     "name": s["name"],
                     "join_mode": s.get("join_mode", "words"),
                     "toggle_mode": s.get("toggle_mode", "shared"),
+                    "auto_close": bool(s.get("auto_close", s.get("join_mode") == "one_shot")),
                     "member_count": len(s.get("gesture_ids", [])),
                     "gesture_ids": list(s.get("gesture_ids", [])),
                 }

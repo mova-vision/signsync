@@ -1,22 +1,23 @@
 """AI sentence builder — the stage orchestrator.
 
-Pipeline (every stage swappable / removable without code changes):
+Pipeline:
 
-    tags → meanings → permutations → [MiniLM reduce] → decision (clef) → TTS
+    tags → ordered readings → one LLM call → TTS
+
+The old MiniLM-reduce and Cloudflare-clef stages are gone: the LLM sees the
+ordered gestures with their possible meanings (and spell-mode words pinned
+in place) and composes the sentence directly — no candidate enumeration,
+no reranker, no decision model. Fast path: a sequence with exactly one
+possible reading skips the network entirely.
 
 The returned events carry per-stage latencies straight into the frontend,
-nothing hardcoded: miniml_ms is 0 when the stage passes through and the
-frontend shows "off" only when the stage itself reports it. A decision
-error is surfaced as an error event, never dropped silently.
+nothing hardcoded. An LLM error is surfaced as an error event, never
+dropped silently. Stage-config from .env (no code touch):
 
-How to switch stages from .env (no code touch):
-    AI_ENABLED=0           → layer fully off (no events)
-    AI_MINILM_ON=0         → MiniLM stage reports available=False,
-                             full candidate set flows to the decision stage
-    AI_MINILM_TRIGGER=50   → candidates above this count get reduced
-    AI_DECISION=clef       → decision adaptor (only clef for now)
+    AI_ENABLED=0            → layer fully off (no events)
+    AI_LLM_BASE_URL / AI_LLM_MODEL / AI_LLM_API_KEY → the OpenAI-compatible
+      endpoint to call (see src/ai/llm_sentence.py)
 """
-import itertools
 import json
 import os
 import pathlib
@@ -24,9 +25,8 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from src.ai import cloudflare_clef
-from src.ai import minilm_filter
-from src.ai.permutation import build_sentences, slot_parts
+from src.ai import llm_sentence
+from src.ai.permutation import slot_parts
 
 _BASE = pathlib.Path(__file__).resolve().parent.parent.parent
 
@@ -49,18 +49,6 @@ def _env(scene: str, key: str, default: str) -> str:
 
 def ai_enabled() -> bool:
     return _env("ai", "AI_ENABLED", "1").lower() not in ("0", "false", "no", "off")
-
-
-def minilm_enabled() -> bool:
-    return _env("minilm", "AI_MINILM_ON", "1").lower() not in ("0", "false", "no", "off")
-
-
-def minilm_trigger() -> int:
-    return max(2, int(_env("minilm trigger", "AI_MINILM_TRIGGER", "50") or 50))
-
-
-def decision_name() -> str:
-    return _env("decision", "AI_DECISION", "clef").lower()
 
 
 # ---------- builder ----------
@@ -107,71 +95,45 @@ class AiSentenceBuilder:
         self._seq += 1
         t0 = time.perf_counter()
 
-        # 1) tags → permutations (meanings resolved inside)
-        perm = build_sentences(list(tags), list(tokens or []))
-        sentences: List[str] = perm["sentences"]
+        # 1) ordered readings: each gesture with its possible meanings,
+        #    spell-mode words pinned in place. Combination count is the
+        #    product of the option lengths — displayed, never enumerated.
+        slots, meaning_map = slot_parts(list(tags), list(tokens or []))
+        option_count = 1
+        for slot in slots:
+            if slot.get("type") == "value":
+                option_count *= max(1, len(slot.get("options") or []))
         perm_ms = (time.perf_counter() - t0) * 1000.0
 
-        if not sentences:
+        if not slots:
             return self._state(
                 result="error",
                 error="No candidate sentences for this tag set",
                 perm_ms=perm_ms,
-                miniml_enabled=minilm_enabled(),
-                miniml_ms=0.0,
                 option_count=0,
-                option_count_after=0,
-                decision_available=cloudflare_clef.is_configured(),
+                llm_available=llm_sentence.is_configured(),
                 tags=list(tags),
                 tokens=list(tokens or []),
             )
 
-        tags_clean = [
-            slot["tag"] for slot in slot_parts(list(tags), list(tokens or []))[0]
-            if slot["type"] == "value"
-        ]
-
-        # 2) optional MiniLM reduce — candidates above the trigger count get
-        # scored and cut to AI_MINILM_TOP_K; smaller sets pass through with
-        # miniml_ms = 0 (nothing is faked).
-        miniml_up_to = len(sentences) > minilm_trigger()
-        if minilm_enabled() and miniml_up_to:
-            t1 = time.perf_counter()
-            sentences, _top1, _ = minilm_filter.maybe_reduce(
-                tags_clean, sentences, minilm_trigger()
-            )
-            miniml_ms = (time.perf_counter() - t1) * 1000.0
-        else:
-            miniml_ms = 0.0
-        option_count_after = len(sentences)
-
-        # 3) decision stage (cloudflare clef-flash).
-        # A single candidate needs no model — clef rejects 1-criteria choices
-        # outright, so the pipeline picks it deterministically instead.
-        decision_available = cloudflare_clef.is_configured()
+        # 2) the one LLM call — composes the most sensible sentence.
+        #    Even a single reading goes through the LLM: turn telegraphic
+        #    readings ("hello wave") into natural speech ("Hello!").
+        llm_available = llm_sentence.is_configured()
         decision = None
         decision_error = None
         decision_note = None
-        if len(sentences) == 1:
-            decision = {
-                "selected": sentences[0],
-                "confidence": None,
-                "probabilities": None,
-                "latency_ms": 0.0,
-            }
-            decision_note = "single candidate (add meanings in data/meanings.json for more permutations)"
-        elif decision_available:
+        if llm_available:
             try:
-                decision = cloudflare_clef.decide(
-                    tags_clean,
-                    sentences,
+                decision = llm_sentence.compose(
+                    slots,
                     history=list(self.history),
                 )
             except Exception as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
                 decision_error = str(exc)
         else:
             decision_error = (
-                "CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN missing in .env"
+                "AI_LLM_API_KEY / AI_LLM_MODEL missing in .env"
             )
 
         if not decision:
@@ -179,11 +141,8 @@ class AiSentenceBuilder:
                 result="error",
                 error=decision_error,
                 perm_ms=round(perm_ms, 2),
-                miniml_enabled=minilm_enabled(),
-                miniml_ms=round(miniml_ms, 2),
-                option_count=perm["options_before"],
-                option_count_after=option_count_after,
-                decision_available=decision_available,
+                option_count=option_count,
+                llm_available=llm_available,
                 tags=list(tags),
                 tokens=list(tokens or []),
             )
@@ -195,22 +154,20 @@ class AiSentenceBuilder:
         event = self._state(
             result="ok",
             sentence=sentence,
+            model=decision.get("model"),
             confidence=decision.get("confidence"),
             probabilities=decision.get("probabilities"),
-            decision_ms=round(decision.get("latency_ms", 0.0), 2),
+            llm_ms=round(decision.get("latency_ms", 0.0), 2),
             decision_note=decision_note,
             total_ms=round(total_ms, 2),
             perm_ms=round(perm_ms, 2),
-            miniml_enabled=minilm_enabled(),
-            miniml_ms=round(miniml_ms, 2),
-            option_count=perm["options_before"],
-            option_count_after=option_count_after,
-            decision_available=decision_available,
+            option_count=option_count,
+            llm_available=llm_available,
             tags=list(tags),
             tokens=list(tokens or []),
         )
 
-        # 4) TTS bake → speech playback payload (same seam as one-shot)
+        # 3) TTS bake → speech playback payload (same seam as one-shot)
         try:
             adaptor = self.speech_adaptor_getter()
             self.audio_path.unlink(missing_ok=True)
@@ -246,8 +203,7 @@ class AiSentenceBuilder:
             stage="roundtrip",
             tags=list(tags),
             tokens=list(tokens or []),
-            miniml_available=minilm_enabled(),
-            decision_available=cloudflare_clef.is_configured(),
+            llm_available=llm_sentence.is_configured(),
         )
 
 
@@ -265,4 +221,10 @@ def get_ai_builder() -> AiSentenceBuilder:
                     return get_speech_adaptor()
 
                 _builder = AiSentenceBuilder(speech_adaptor_getter=_speech)
+                # pre-open the LLM TLS connection (latency fix)
+                try:
+                    from src.ai import llm_sentence
+                    llm_sentence.warm_up()
+                except Exception:
+                    pass
     return _builder

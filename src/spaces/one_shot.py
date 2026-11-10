@@ -16,6 +16,7 @@ detection pipeline beyond a single hook call per accepted gesture.
 """
 
 from typing import Any, Dict, Optional
+import time
 
 
 class OneShotSpeaker:
@@ -25,10 +26,8 @@ class OneShotSpeaker:
         self.gestures = gesture_store
         self.spaces = space_store
         self.tracker = space_tracker
-        # While True the spoken exchange is over but the user still has a
-        # hand in frame — the space stays active so nothing re-registers
-        # in Standard scope. Cleared once hands leave (pipeline calls flush).
-        self.pending_hand_off = False
+        # pending_hand_off now lives on the tracker so auto-close words
+        # spaces and one-shot spaces share the exact same deferred close.
 
     def on_accepted(self, gesture_name: Optional[str]) -> Optional[Dict[str, Any]]:
         """Call after each accepted gesture.
@@ -43,7 +42,7 @@ class OneShotSpeaker:
         """
         if not gesture_name or not self.tracker.active_space_id:
             return None
-        if self.pending_hand_off:
+        if self.tracker.pending_hand_off:
             return None  # wait for the hand to leave before closing out
         space = self.spaces.get_by_id(self.tracker.active_space_id)
         if not space or space.get("join_mode") != "one_shot":
@@ -69,23 +68,25 @@ class OneShotSpeaker:
             "space_id": space["id"],
         }
         # One sign, one sentence. With auto-close (the default for one-shot
-        # spaces) the space stays scoped only until the hand is gone so the
-        # still-held pose can't leak into Standard mode. With auto-close
-        # OFF the user keeps the space open — further member signs speak
+        # spaces):
+        # - in "quiet" (on-screen) mode: close immediately with a tiny 150ms cooldown.
+        # - in "hand_off" (move away) mode: hold scope until hand leaves camera.
+        # With auto-close OFF the user keeps the space open — further member signs speak
         # again immediately — and closes it via its toggle/exit sign.
         if space.get("auto_close", True):
-            self.pending_hand_off = True
+            if space.get("close_mode", "hand_off") == "quiet":
+                self.tracker.deactivate()
+                self.tracker._cooldown_until = time.monotonic() + 0.15
+            else:
+                self.tracker.pending_hand_off = True
+                self.tracker.pending_join_mode = "one_shot"
         return payload
 
     def flush_hand_off(self) -> bool:
         """Finish the exchange once no hands are visible: deactivate the
         space. The pipeline clears the buffer alongside this call."""
-        if not self.pending_hand_off:
-            return False
-        self.tracker.deactivate()
-        self.pending_hand_off = False
-        return True
+        return self.tracker.flush_hand_off()
 
     def on_reset(self) -> None:
         """Hard reset: drop any pending hand-off immediately."""
-        self.pending_hand_off = False
+        self.tracker.pending_hand_off = False

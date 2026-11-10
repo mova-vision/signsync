@@ -24,6 +24,8 @@ While MOVA provides a general-purpose hardware-software event architecture, its 
 
 ## 2. System Architecture
 
+For complete diagrams, space state machines, and pipeline flows, see [Architecture & Pipelines](docs/ARCHITECTURE.md).
+
 ```text
        [ Wearable FPP Camera ]
                   │ (Live Video Stream)
@@ -31,15 +33,14 @@ While MOVA provides a general-purpose hardware-software event architecture, its 
        [ Software & Vision Layer ]
        ├── MediaPipe Landmark Detection (21 points/hand)
        ├── Geometric Normalization (Wrist-centered, scale invariant)
-       ├── Orientation Math (Palm normal vector)
-       └── Gesture Scoring (Cosine similarity & template matching)
-                  │ (Event / Action / Data over Wi-Fi)
+       ├── Sign Space Scoping (Words, Spell, One-Shot)
+       ├── Sliding Window Gesture Buffer & Deduplication
+       └── Direct LLM Sentence Formulation + TTS Audio Stream
+                  │ (Event / Action / Speech over Wi-Fi / WebSockets)
                   ▼
-       [ Hardware Layer (MCU) ]
-       ├── Sockets (Physical pin abstraction)
-       ├── Drivers (Component-level control)
-       ├── Adaptors (Standardized interface API)
-       └── Hooks / Actions (Event reactions, audio, LEDs, actuators)
+       [ Hardware & Audio Outputs ]
+       ├── Web Audio Player (Instant Speech & LLM Audio Output)
+       └── Modular MCU Hardware (Sockets, Drivers, Adaptors, Actuators)
 ```
 
 ---
@@ -49,29 +50,25 @@ While MOVA provides a general-purpose hardware-software event architecture, its 
 ```text
 Mova/
 ├── docs/                        # Project & hardware documentation
-│   ├── ARCHITECTURE.md          # High-level architecture blueprint
+│   ├── ARCHITECTURE.md          # Full system architecture, mode workflows & pipeline diagrams
 │   └── hardware/
 │       ├── DEVELOPER_GUIDE.md   # Hardware framework internal architecture
 │       └── USER_GUIDE.md        # Pin socket mapping & component usage
 │
-├── experiments/                 # Active testing & benchmarking modules
-│   ├── gesture_matching/        # Hand gesture detection, recording & live test
-│   │   ├── vision_engine.py     # Camera & MediaPipe task runner
-│   │   ├── math_engine.py       # Geometric normalization & scoring math
-│   │   ├── gesture_manager.py   # Template persistence (gestures.json)
-│   │   ├── register.py          # CLI to capture & train new gestures
-│   │   └── live_test.py         # Real-time scoring UI with FPS & latency
-│   └── depth_preview/           # Camera depth evaluation experiments
+├── src/                         # Production application & recognition engine
+│   ├── server/                  # FastAPI web server, WebSocket feed & REST APIs
+│   ├── pipeline/                # Real-time pipeline orchestrating vision & buffering
+│   ├── vision/                  # MediaPipe landmark tracking & geometric scoring
+│   ├── spaces/                  # Sign Space tracker & One-Shot instant speech
+│   ├── buffer/                  # Gesture smoothing, outlier filtering & deduplication
+│   ├── ai/                      # Direct LLM sentence synthesis & TTS speech
+│   └── storage/                 # Gestures, Sign Spaces & Workspace stores
+│
+├── templates/                   # Frontend web UI (Dashboard, Groups, Register, Settings)
+├── data/                        # JSON persistent storage (gestures, spaces, workspaces)
 │
 ├── hardware/                    # Embedded MCU & firmware layer
 │   └── simulation/              # Velxio / Wokwi hardware simulation prototype
-│       ├── sketch.ino           # Main MCU entrypoint
-│       ├── diagram.json         # Circuit schematic & simulated wiring
-│       ├── sockets/             # Logical pin abstraction (GPIO / I2C)
-│       ├── drivers/             # Low-level hardware drivers (LED, Ultrasonic, etc.)
-│       ├── adaptors/            # Clean adapter interfaces
-│       └── hooks/               # Event reaction logic
-│
 └── assets/                      # CAD 3D models, PCB files, schematics, references
 ```
 
@@ -101,23 +98,18 @@ Instead of hardcoding pin numbers across the code:
 * Python 3.10+
 * Virtual environment (`venv`)
 
-### Setting Up the Gesture Experiment
+### Running the MOVA Server
 ```bash
 # 1. Activate your virtual environment
 source venv/bin/activate        # On Linux / WSL
 # or: win_venv\Scripts\activate # On Windows
 
 # 2. Install dependencies
-pip install mediapipe opencv-python numpy
+pip install -r requirements.txt # or: pip install mediapipe opencv-python fastapi uvicorn websockets
 
-# 3. Navigate to experiment directory
-cd experiments/gesture_matching
-
-# 4. Record a new gesture (e.g. "hello", "fist", "thumbs_up")
-python register.py
-
-# 5. Run real-time detection & benchmarking
-python live_test.py
+# 3. Launch the application
+python -m src.server.main
+# Open http://localhost:8000 in your browser
 ```
 
 ### Running Hardware Simulation
@@ -126,10 +118,9 @@ The firmware prototype in `hardware/simulation/` can be opened directly in [Velx
 ---
 
 ## 6. Documentation References
-* [High-Level Architecture](docs/ARCHITECTURE.md)
+* [Full System Architecture & Pipelines](docs/ARCHITECTURE.md)
 * [Hardware Developer Guide](docs/hardware/DEVELOPER_GUIDE.md)
 * [Hardware Socket & Component User Guide](docs/hardware/USER_GUIDE.md)
-* [Gesture Matching Experiment Blueprint](experiments/gesture_matching/README.md)
 
 ```
  [ Motion-Oriented ]   +   [ Versatile ]   +   [ Automation ]

@@ -16,8 +16,9 @@
         "79c22ffd",
         "a9cc7d27"
       ],
-      "updated_at": 1794295129.8524234,
-      "auto_close": false
+      "updated_at": 1794301345.4706929,
+      "auto_close": false,
+      "close_mode": "quiet"
     },
     {
       "id": "spc_0d681012",
@@ -43,8 +44,9 @@
         "abcbd95f",
         "97162776"
       ],
-      "updated_at": 1794294881.6191,
-      "auto_close": true
+      "updated_at": 1794301069.9333448,
+      "auto_close": true,
+      "close_mode": "hand_off"
     },
     {
       "id": "spc_3f9f0b4f",
@@ -61,7 +63,8 @@
         "bc3d93a6",
         "0d099ce6"
       ],
-      "updated_at": 1793078171.930361
+      "updated_at": 1794299425.5781786,
+      "auto_close": true
     }
   ]
 }

@@ -11,9 +11,16 @@ a normal keyword — group-vs-group competition is eliminated at the source.
 """
 
 from typing import Dict, Any, List, Optional
+import time
 
 # Roles that stay scoreable outside any space.
 CONTROL_ROLES = {"space-entry", "space-exit", "space-toggle"}
+
+# After a "quiet" auto-close the space closes immediately upon accepting the sign.
+# Normal gestures are briefly locked out (150ms) so the held/transitioning pose
+# doesn't immediately misfire as a standard lookalike. Control signs (entry/toggle)
+# remain scoreable.
+_QUIET_COOLDOWN_S = 0.15
 
 
 class SpaceTracker:
@@ -22,6 +29,17 @@ class SpaceTracker:
         self.spaces = space_store
         self.active_space_id: Optional[str] = None
         self.space_buffer: List[str] = []
+        # Deferred close (auto_close): the space's job is done but the hand
+        # is still in frame holding the sign. The space stays scoped so the
+        # lingering pose can't fall back into Standard scope and match a
+        # lookalike gesture. Cleared by flush_hand_off() when hands leave.
+        self.pending_hand_off = False
+        # join_mode of the space holding the deferred close — the pipeline
+        # needs it to decide whether closing also resets the sentence
+        # collection (one_shot: yes; words: the phrase keeps collecting).
+        self.pending_join_mode: Optional[str] = None
+        self.last_flush_join_mode: Optional[str] = None
+        self._cooldown_until: float = 0.0
         # name -> (id, role); rebuilt lazily
         self._role_by_name: Dict[str, Dict[str, str]] = {}
 
@@ -53,6 +71,10 @@ class SpaceTracker:
                 return self._standard_candidates()
             member_ids = set(space.get("gesture_ids", []))
             return [g for g in self.gestures.get_all() if g.get("id") in member_ids]
+        if time.monotonic() < self._cooldown_until:
+            # During cooldown: normal gestures stay locked out (so a lingering/transitioning
+            # pose can't match a lookalike). Only control signs keep working (e.g. to re-enter a group).
+            return [g for g in self.gestures.get_all() if g.get("role", "normal") in CONTROL_ROLES]
         return self._standard_candidates()
 
     def _standard_candidates(self) -> List[Dict[str, Any]]:
@@ -70,6 +92,12 @@ class SpaceTracker:
         if info is None:
             return None
         role = info["role"]
+        if self.pending_hand_off and role not in CONTROL_ROLES:
+            # Deferred close in progress and the hand still holds a member
+            # pose: member re-triggers are swallowed — but this space's own
+            # control signs (toggle/exit) stay fully working, so the user
+            # can always close manually, no matter how auto_close is set.
+            return None
 
         if role == "space-sign":
             space = self._space_of_gesture_id(info["id"])
@@ -88,11 +116,19 @@ class SpaceTracker:
                         "mode": "words",
                         "letters": [gesture_name],
                     }
-                    # auto-close groups: the sign was already marked — close
-                    # the space right here, no exit sign / hand-away needed.
+                    # Auto-close groups: the sign was already marked, so the
+                    # space can close.
+                    # In "quiet" (on-screen) mode: close immediately with a tiny
+                    # 150ms cooldown so the held pose doesn't immediately false-trigger.
+                    # In "hand_off" (move away) mode: hold scope until hand leaves camera.
                     # Spell keeps chaining, so it never auto-closes.
                     if space.get("auto_close", False) and join_mode == "words":
-                        self.deactivate()
+                        if space.get("close_mode", "hand_off") == "quiet":
+                            self.deactivate()
+                            self._cooldown_until = time.monotonic() + _QUIET_COOLDOWN_S
+                        else:
+                            self.pending_hand_off = True
+                            self.pending_join_mode = "words"
                     return token
             return None
 
@@ -124,7 +160,16 @@ class SpaceTracker:
     def on_completed(self) -> Optional[Dict[str, Any]]:
         """The buffer fired 'completed' (inactivity close). If a space was
         open it closes here too and flushes its letters."""
+        if self.pending_hand_off:
+            # Inactivity timeout may fire while the hand still holds the
+            # just-marked sign — the real close is the hand-off, not this.
+            return None
         if self.active_space_id:
+            space = self.spaces.get_by_id(self.active_space_id)
+            if space and not space.get("auto_close", True):
+                # auto_close is OFF: only toggle/exit sign closes the group.
+                # Do NOT close on inactivity / hand-away.
+                return None
             return self._flush()
         return None
 
@@ -137,15 +182,35 @@ class SpaceTracker:
         """Hard reset (client 'reset' action): back to standard, no token."""
         self.active_space_id = None
         self.space_buffer = []
+        self.pending_hand_off = False
+        self.pending_join_mode = None
+        self.last_flush_join_mode = None
+        self._cooldown_until = 0.0
 
     def deactivate(self) -> None:
         """Leave the active space silently (one-shot speech already spoke)."""
         self.active_space_id = None
         self.space_buffer = []
+        self.pending_hand_off = False
+        self.pending_join_mode = None
+
+    def flush_hand_off(self) -> bool:
+        """Deferred-close counterpart: called by the pipeline when no hands
+        are visible. True exactly once when the pending space is closed.
+        `last_flush_join_mode` tells the caller what kind of exchange ended:
+        one_shot = spoken, done → caller resets the collection; words = the
+        phrase must keep collecting, closing only restores Standard scope."""
+        if not self.pending_hand_off:
+            self.last_flush_join_mode = None
+            return False
+        self.last_flush_join_mode = self.pending_join_mode
+        self.deactivate()
+        return True
 
     def _activate(self, space_id: str) -> None:
         self.active_space_id = space_id
         self.space_buffer = []
+        self._cooldown_until = 0.0
 
     def _flush(self) -> Optional[Dict[str, Any]]:
         if not self.active_space_id:
@@ -167,6 +232,8 @@ class SpaceTracker:
             token = None
         self.active_space_id = None
         self.space_buffer = []
+        self.pending_hand_off = False
+        self.pending_join_mode = None
         return token
 
     # ------------------------------------------------------------------- state

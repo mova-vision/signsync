@@ -55,6 +55,10 @@ class RealTimePipeline:
         # events leave the network one WS payload at a time.
         self.ai_state: Optional[Dict[str, Any]] = None
         self._ai_events: deque = deque(maxlen=10)
+        # While a deferred close (auto_close + lingering hand) holds a span,
+        # the buffer can complete repeatedly on the same pose; remember that
+        # the AI chain was already started so it doesn't duplicate the job.
+        self._ai_fired_in_pending_span = False
 
     def _start_ai_for_sequence(self, completed_names: List[str]) -> None:
         """Fire the AI chain for the just-completed tag set (no raise path —
@@ -126,6 +130,7 @@ class RealTimePipeline:
     def _begin_span(self) -> None:
         self._span_serial += 1
         self.space_tokens = []
+        self._ai_fired_in_pending_span = False
 
     def _space_token_frame(self, token: Dict[str, Any]) -> Dict[str, Any]:
         return {"pos": len(self.buffer.accepted_sequence), **token}
@@ -204,7 +209,8 @@ class RealTimePipeline:
                 if speech_event:
                     # The exchange is done — clear the buffer so the spoken
                     # sign never lingers in the queue, and start a new span.
-                    self.buffer.clear()
+                    # Keep last_accepted so a held pose stays deduplicated.
+                    self.buffer.clear(keep_last_accepted=True)
                     self._begin_span()
             elif buffer_event.event_type == "completed":
                 space_token = self.spaces.on_completed()
@@ -213,9 +219,15 @@ class RealTimePipeline:
                 self.space_tokens.append(self._space_token_frame(space_token))
 
             # Sequence just landed in the queue → AI layer makes sense of the
-            # tags (spell tokens go in as fixed words, not permuted).
+            # tags (spell tokens go in as fixed words, not permuted). During a
+            # deferred close (hand still lingering, auto_close on) the buffer
+            # completes again and again on the same pose — only the FIRST
+            # completion of that span starts the AI job.
             if buffer_event.event_type == "completed":
-                self._start_ai_for_sequence(buffer_event.details.get("sequence") or [])
+                in_pending = self.spaces.pending_hand_off
+                if not in_pending or not self._ai_fired_in_pending_span:
+                    self._start_ai_for_sequence(buffer_event.details.get("sequence") or [])
+                    self._ai_fired_in_pending_span = in_pending
 
         # Build landmarks for overlay rendering
         simplified_landmarks = [
@@ -229,9 +241,13 @@ class RealTimePipeline:
         # Deferred close: a spoken one-shot exchange only really ends when
         # the user's hand leaves the frame — until then the space stays
         # scoped so the lingering pose can't register in Standard mode.
+        # Words auto-close groups also hold until hand-off, but their
+        # collection must SURVIVE the close: the selected word goes to the
+        # queue and the phrase keeps building (e.g. "i love" + COLORS red).
         if hand_count == 0 and self.one_shot_speaker.flush_hand_off():
-            self.buffer.clear()
-            self._begin_span()
+            if self.spaces.last_flush_join_mode == "one_shot":
+                self.buffer.clear()
+                self._begin_span()
 
         # AI layer results leave one WS payload at a time. A finished event is
         # surfaced twice: as `ai_event` (card-4 panel + latencies) and, when it

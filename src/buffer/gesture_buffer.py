@@ -263,12 +263,15 @@ class GestureBuffer:
         """Check if an end signal has triggered."""
         return self.status == "completed"
 
-    def clear(self) -> None:
-        """Reset buffer to clean initial state."""
+    def clear(self, keep_last_accepted: bool = False) -> None:
+        """Reset buffer to clean initial state.
+        keep_last_accepted=True preserves the last gesture name so a held
+        pose stays deduplicated (used after one-shot speech)."""
         self.window.clear()
         self.accepted_sequence.clear()
         self.completed_sequence.clear()
-        self.last_accepted_gesture = None
+        if not keep_last_accepted:
+            self.last_accepted_gesture = None
         self.consecutive_duplicate_count = 0
         self.candidate_streak = 0
         self.current_candidate = None

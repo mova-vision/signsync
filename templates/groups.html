@@ -103,6 +103,13 @@
             <span id="groupAutoCloseLabel">Close the group right after a sign — no hand-away wait</span>
           </label>
         </div>
+        <div class="mv-field" id="closeModeField">
+          <label for="groupCloseMode">When closing after a sign</label>
+          <select id="groupCloseMode">
+            <option value="hand_off" selected>Move hand away from screen</option>
+            <option value="quiet">Keep hand on screen (pause + grace)</option>
+          </select>
+        </div>
         <p class="mv-note">Any groups you create appear as a choice on the Register page.</p>
         <button id="createGroup" class="mv-primary mv-wide" type="button">Create group</button>
         <div id="createStatus" class="mv-note"></div>
@@ -143,8 +150,8 @@
 
     const autoCloseTitle = sp =>
       sp.join_mode === 'one_shot'
-        ? 'on: space closes right after speaking (current MOVA behavior) · off: space stays open, each sign speaks again, close via toggle/exit sign'
-        : 'on: space closes right after each member sign — controls close/inactivity no longer needed';
+        ? `on: space closes right after speaking (${sp.close_mode === 'quiet' ? 'stays on screen with pause grace' : 'hand leaves screen'}) · off: space stays open, each sign speaks again`
+        : `on: space closes right after each member sign (${sp.close_mode === 'quiet' ? 'stays on screen with pause grace' : 'hand leaves screen'}) · off: close via toggle/exit`;
 
     function render() {
       $('groups').replaceChildren(...state.spaces.map((sp, i) => {
@@ -168,7 +175,7 @@
           Object.assign(document.createElement('span'), { className: 'mv-pill', textContent: `${(sp.gesture_ids || []).length} signs` }),
           Object.assign(document.createElement('span'), {
             className: 'mv-pill' + (sp.auto_close ? ' accent' : ''),
-            textContent: sp.auto_close ? 'auto-close on' : 'auto-close off',
+            textContent: sp.auto_close ? (sp.close_mode === 'quiet' ? 'auto-close (screen)' : 'auto-close (away)') : 'auto-close off',
             title: autoCloseTitle(sp)
           })
         );
@@ -189,6 +196,21 @@
             load();
           };
           actions.append(ac);
+          if (sp.auto_close) {
+            const cm = document.createElement('button');
+            cm.type = 'button';
+            cm.textContent = sp.close_mode === 'quiet' ? 'mode: on-screen' : 'mode: move away';
+            cm.title = sp.close_mode === 'quiet' ? 'Click to switch to hand leaves screen' : 'Click to switch to keep hand on screen';
+            cm.onclick = async () => {
+              await fetch(`/api/spaces/${sp.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ close_mode: sp.close_mode === 'quiet' ? 'hand_off' : 'quiet' })
+              });
+              load();
+            };
+            actions.append(cm);
+          }
         }
         const del = document.createElement('button');
         del.type = 'button';
@@ -393,7 +415,8 @@
         body: JSON.stringify({
           name,
           join_mode: $('groupJoin').value,
-          auto_close: $('groupAutoClose').checked
+          auto_close: $('groupAutoClose').checked,
+          close_mode: $('groupCloseMode').value
         })
       });
       const data = await res.json();
@@ -403,12 +426,20 @@
       load();
     };
 
+    function updateCloseModeVisibility() {
+      $('closeModeField').style.display = $('groupAutoClose').checked ? 'block' : 'none';
+    }
+
     // the auto-close checkbox pre-checks itself to match the picked mode:
     // one-shot groups historically close right after speaking, open sign
     // spaces historically wait for the exit/toggle sign.
     $('groupJoin').addEventListener('change', () => {
       $('groupAutoClose').checked = $('groupJoin').value === 'one_shot';
+      updateCloseModeVisibility();
     });
+
+    $('groupAutoClose').addEventListener('change', updateCloseModeVisibility);
+    updateCloseModeVisibility();
 
     load();
   </script>

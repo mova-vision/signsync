@@ -76,7 +76,8 @@ class SignSpaceStore:
         return None
 
     def create(self, name: str, toggle_mode: str = "shared", join_mode: str = "words",
-               auto_close: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+               auto_close: Optional[bool] = None,
+               close_mode: Optional[str] = None) -> Optional[Dict[str, Any]]:
         with self._lock:
             key = make_key(name)
             if self.get_by_key(key):
@@ -92,6 +93,12 @@ class SignSpaceStore:
                 "name": name,
                 "join_mode": join_mode if join_mode in ("spell", "words", "one_shot") else "words",
                 "toggle_mode": toggle_mode if toggle_mode in ("shared", "separate") else "shared",
+                # How an auto-closed group ends its pending hand-off window:
+                # "hand_off" = close when the hand leaves the camera; "quiet"
+                # = close after a short no-match pause (hand may stay on
+                # screen), followed by a tiny standard-pool grace so the held
+                # pose can't leak into a lookalike normal gesture.
+                "close_mode": close_mode if close_mode in ("hand_off", "quiet") else "hand_off",
                 "auto_close": bool(auto_close),
                 "created_at": time.time(),
                 "gesture_ids": [],
@@ -107,6 +114,7 @@ class SignSpaceStore:
         toggle_mode: Optional[str] = None,
         join_mode: Optional[str] = None,
         auto_close: Optional[bool] = None,
+        close_mode: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         with self._lock:
             space = self._get_unlocked(space_id)
@@ -125,6 +133,8 @@ class SignSpaceStore:
                 space["join_mode"] = join_mode
             if auto_close is not None:
                 space["auto_close"] = bool(auto_close)
+            if close_mode in ("hand_off", "quiet"):
+                space["close_mode"] = close_mode
             space["updated_at"] = time.time()
             self.save()
             return space
@@ -189,6 +199,7 @@ class SignSpaceStore:
                     "join_mode": s.get("join_mode", "words"),
                     "toggle_mode": s.get("toggle_mode", "shared"),
                     "auto_close": bool(s.get("auto_close", s.get("join_mode") == "one_shot")),
+                    "close_mode": s.get("close_mode", "hand_off"),
                     "member_count": len(s.get("gesture_ids", [])),
                     "gesture_ids": list(s.get("gesture_ids", [])),
                 }

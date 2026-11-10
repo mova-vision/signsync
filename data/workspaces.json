@@ -1,8 +1,8 @@
 {
-  "active": "vinit",
+  "active": "default",
   "workspaces": [
     "experiment2",
     "vinit"
   ],
-  "_last_active": "vinit"
+  "_last_active": "default"
 }

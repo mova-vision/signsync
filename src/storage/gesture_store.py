@@ -55,6 +55,15 @@ class GestureStore:    # Runtime roles. "normal" = standard matching pool; every
         with self._lock:
             return self._data.get("gestures", [])
 
+    def reload_path(self, filepath: str) -> bool:
+        """Point the store at a different dataset file and reload in place
+        (workspace switching keeps the same singleton object alive)."""
+        with self._lock:
+            self.filepath = Path(filepath)
+            self.filepath.parent.mkdir(parents=True, exist_ok=True)
+            self.load()
+            return True
+
     def get_by_role(self, roles: Any) -> List[Dict[str, Any]]:
         """Return gestures whose role is in `roles` (str or iterable)."""
         wanted = {roles} if isinstance(roles, str) else set(roles)

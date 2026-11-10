@@ -151,6 +151,15 @@ class SignSpaceStore:
             self.save()
             return True
 
+    def reload_path(self, filepath: str) -> bool:
+        """Point the store at a different dataset file and reload in place
+        (workspace switching keeps the same singleton object alive)."""
+        with self._lock:
+            self.filepath = Path(filepath)
+            self.filepath.parent.mkdir(parents=True, exist_ok=True)
+            self.load()
+            return True
+
     def delete(self, space_id: str) -> List[str]:
         """Delete any space, returning its member gesture ids so callers can
         fall their roles back to `normal`. There are no protected defaults."""

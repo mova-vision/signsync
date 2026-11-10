@@ -1,0 +1,8 @@
+{
+  "active": "vinit",
+  "workspaces": [
+    "experiment2",
+    "vinit"
+  ],
+  "_last_active": "vinit"
+}

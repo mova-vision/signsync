@@ -18,18 +18,21 @@ from typing import Dict, List
 
 _BASE = Path(__file__).resolve().parent.parent.parent
 _OVERRIDES_PATH = _BASE / "data" / "meanings.json"
-_GESTURES_PATH = _BASE / "data" / "gestures.json"
 _EXPERIMENT_PATH = (
     _BASE / "experiments" / "gesture_permutations_pick" / "dataset.json"
 )
 
 
-@lru_cache(maxsize=1)
-def _registered_labels(mtime_ns: int) -> Dict[str, List[str]]:
-    """Name → labels map from the gesture store keydata. Cached against the
-    file mtime so UI edits go live without a restart."""
+@lru_cache(maxsize=8)
+def _registered_labels(key) -> Dict[str, List[str]]:
+    """Name → labels map from the gesture store keydata. Cached against
+    (workspace, file mtime) so UI edits and workspace switches go live
+    without a restart."""
+    workspace, mtime_ns = key
+    from src.storage.workspace import get_workspace_manager
+    path = get_workspace_manager().gestures_path(workspace)
     try:
-        with open(_GESTURES_PATH, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             raw = json.load(fh)
         items = raw.get("gestures", [])
         if isinstance(items, dict):
@@ -45,11 +48,14 @@ def _registered_labels(mtime_ns: int) -> Dict[str, List[str]]:
 
 
 def _labels_now() -> Dict[str, List[str]]:
+    from src.storage.workspace import get_workspace_manager
+    ws = get_workspace_manager()
+    path = Path(ws.gestures_path())
     try:
-        mtime_ns = _GESTURES_PATH.stat().st_mtime_ns
+        mtime_ns = path.stat().st_mtime_ns
     except OSError:
         return {}
-    return _registered_labels(mtime_ns)
+    return _registered_labels((ws.active(), mtime_ns))
 
 
 @lru_cache(maxsize=1)

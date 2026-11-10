@@ -61,7 +61,61 @@ AUDIO_DIR = BASE_DIR / "data" / "audio"
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.mount("/gesture-previews", StaticFiles(directory=str(PREVIEW_DIR)), name="gesture-previews")
-app.mount("/audio", StaticFiles(directory=str(AUDIO_DIR)), name="audio")
+
+# --- Workspaces (namespaced experiment datasets) -----------------------------
+# /wsdata serves every extra workspace's previews+audio; /audio = route below
+# resolves across the ACTIVE workspace and the shared default audio dir.
+# NOTE: must NOT start with "/ws" — that would shadow the /ws/pipeline and
+# /ws/detect WebSocket routes (StaticFiles asserts http scope and would
+# swallow every playground connection).
+from src.storage.workspace import get_workspace_manager  # noqa: E402
+
+WSMAN = get_workspace_manager()
+app.mount("/wsdata", StaticFiles(directory=str(WSMAN.workspaces_root)), name="workspaces")
+
+
+def _previews_dir() -> Path:
+    """Previews of the ACTIVE workspace ('default' keeps the root dir)."""
+    if WSMAN.active() == "default":
+        return PREVIEW_DIR
+    return WSMAN.previews_dir()
+
+
+def _preview_url(file_name: str) -> str:
+    if WSMAN.active() == "default":
+        return f"/gesture-previews/{file_name}"
+    return f"/wsdata/{WSMAN.active()}/gesture_previews/{file_name}"
+
+
+def _audio_dir() -> Path:
+    """Audio dir of the ACTIVE workspace (files also served from the shared
+    default dir as a fallback so nothing regenerates needlessly)."""
+    if WSMAN.active() == "default":
+        return AUDIO_DIR
+    return WSMAN.audio_dir()
+
+
+@app.get("/audio/{key:path}")
+async def serve_audio(key: str):
+    """Resolve /audio/{key} across the active workspace, then the shared
+    default audio dir — one URL surface for every workspace."""
+    from fastapi.responses import FileResponse
+    parts = Path(key).parts
+    if not parts or any(p in ("..", "", ".") for p in parts):
+        raise HTTPException(404, "audio not found")
+    gone = [d for d in (_audio_dir(), AUDIO_DIR)]
+    seen = set()
+    for root in gone:
+        rp = str(root.resolve())
+        if rp in seen:
+            continue
+        seen.add(rp)
+        candidate = (root / key).resolve()
+        if candidate.is_file() and str(candidate).startswith(rp):
+            return FileResponse(candidate)
+    raise HTTPException(404, "audio not found")
+
+
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # Lazy-loaded processor
@@ -126,6 +180,10 @@ class SpaceUpdateRequest(BaseModel):
 class GestureSentenceRequest(BaseModel):
     sentence: str
     gender: str = "male"  # "male" | "female"
+
+
+class WorkspaceCreateRequest(BaseModel):
+    name: str
 
 
 def _link_gesture_to_space(gesture_id: str, space_id: str, role: str) -> Optional[str]:
@@ -319,7 +377,7 @@ async def save_gesture(req: SaveGestureRequest):
         landmarks_list = landmarks
     
     gesture_id = str(uuid.uuid4())[:8]
-    preview_file = PREVIEW_DIR / f"{gesture_id}.jpg"
+    preview_file = _previews_dir() / f"{gesture_id}.jpg"
     if not cv2.imwrite(str(preview_file), capture["last_frame"]):
         raise HTTPException(500, "Could not save gesture preview")
 
@@ -331,7 +389,7 @@ async def save_gesture(req: SaveGestureRequest):
         handedness=capture.get("handedness", ["Right"])[0] if capture.get("handedness") and len(capture["handedness"]) == 1 else capture.get("handedness"),
         features=capture["features"],
         labels=req.labels,
-        preview_path=f"/gesture-previews/{preview_file.name}",
+        preview_path=_preview_url(preview_file.name),
         role=role
     )
 
@@ -579,11 +637,11 @@ async def _bake_gesture_speech(gesture_id: str, sentence: str, gender: str):
     adaptor = get_speech_adaptor()
     ext = getattr(adaptor.provider, "AUDIO_EXT", "mp3")
     audio_key = f"gest_{gesture_id}.{ext}"
-    dest = AUDIO_DIR / audio_key
+    dest = _audio_dir() / audio_key
     try:
         # Clean stale baked files from a different provider so /audio never
         # serves old audio next to the fresh one.
-        for stale in AUDIO_DIR.glob(f"gest_{gesture_id}.*"):
+        for stale in _audio_dir().glob(f"gest_{gesture_id}.*"):
             stale.unlink(missing_ok=True)
         voice = adaptor.voice_for_gender(gender)
         await asyncio.to_thread(adaptor.synthesize_and_save, sentence, dest, voice=voice)
@@ -619,16 +677,54 @@ async def get_gesture_sentence_audio(gesture_id: str):
     shot = (gesture or {}).get("shot") or {}
     if not shot.get("audio_key"):
         raise HTTPException(404, "No speech generated for this gesture")
-    path = AUDIO_DIR / shot["audio_key"]
+    path = _audio_dir() / shot["audio_key"]
     if not path.exists():
         raise HTTPException(404, "Speech file missing — regenerate it")
     from fastapi.responses import FileResponse
     return FileResponse(path, media_type="audio/mpeg", filename=shot["audio_key"])
 
 
+# --- Workspaces API -----------------------------------------------------------
+
+@app.get("/api/workspaces")
+async def list_workspaces():
+    return {"active": WSMAN.active(), "workspaces": WSMAN.list()}
+
+
+@app.post("/api/workspaces")
+async def create_workspace(req: WorkspaceCreateRequest):
+    result = WSMAN.create(req.name)
+    if not result.get("ok"):
+        raise HTTPException(400, result.get("error", "could not create workspace"))
+    return {"success": True, "active": WSMAN.active(), "workspaces": WSMAN.list()}
+
+
+@app.post("/api/workspaces/switch")
+async def switch_workspace(req: WorkspaceCreateRequest):
+    name = (req.name or "").strip().lower()
+    if not WSMAN.set_active(name):
+        raise HTTPException(404, f"workspace '{name}' not found")
+    # swap every store's dataset in place (singletons stay alive)
+    store.reload_path(WSMAN.gestures_path())
+    space_store.reload_path(WSMAN.spaces_path())
+    # half-finished captures belong to the previous dataset
+    active_captures.clear()
+    # reset detection state: buffers/space trackers must not leak gesture
+    # references from the previous dataset
+    try:
+        pipeline.reset_buffer()
+    except NameError:
+        pass
+    except Exception:
+        pass
+    print(f"[workspace] switched → '{name}' "
+          f"(gestures: {len(store.get_all())}, spaces: {len(space_store.get_all())})",
+          flush=True)
+    return {"success": True, "active": name, "workspaces": WSMAN.list()}
+
+
 @app.get("/health")
-async def health():
-    return {"status": "ok", "gestures_count": len(store.get_all())}
+async def health():    return {"status": "ok", "gestures_count": len(store.get_all())}
 
 
 # ============================================================

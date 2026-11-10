@@ -25,7 +25,10 @@ test
 # gestures.json
 signs
 data/gesture_previews/
+**/gesture_previews/
 data/audio/
+**/audio/
+data/workspaces/vinit/
 data/piper/
 node_modules/
 PLANNING.md
